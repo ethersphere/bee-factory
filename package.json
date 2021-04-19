@@ -1,0 +1,20 @@
+{
+  "name": "bee-factory",
+  "version": "0.0.1",
+  "description": "Setup Swarm Test Blockchain and arbitrary numbered Bee nodes",
+  "scripts": {
+    "build:chequebook": "truffle compile",
+    "migrate:chequebook": "truffle migrate --reset --compile-all",
+    "test:chequebook": "truffle test"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.0.0",
+    "truffle": "^5.3.1"
+  },
+  "keywords": [
+    "swarm",
+    "ethereum-swarm",
+    "bee-factory"
+  ],
+  "license": "BSD-3-Clause"
+}
