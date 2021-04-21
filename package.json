@@ -3,12 +3,13 @@
   "version": "0.0.1",
   "description": "Setup Swarm Test Blockchain and arbitrary numbered Bee nodes",
   "scripts": {
-    "build:chequebook": "truffle compile",
-    "migrate:chequebook": "truffle migrate --reset --compile-all",
-    "test:chequebook": "truffle test"
+    "compile:chequebook": "truffle compile",
+    "migrate:chequebook": "truffle migrate",
+    "test:chequebook": "truffle test",
+    "supply": "truffle exec src/supply.js"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.0.0",
+    "@openzeppelin/contracts": "^3.1.0",
     "truffle": "^5.3.1"
   },
   "keywords": [
