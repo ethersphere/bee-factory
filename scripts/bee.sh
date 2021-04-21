@@ -68,6 +68,7 @@ PORT_MAPS=2
 NETWORK="swarm-test-network"
 SWAP=true
 SWAP_FACTORY_ADDRESS="0x5b1869D9A4C187F2EAa108f3062412ecf0526b24"
+INIT_ROOT_DATA_DIR="$(pwd)/bee-data-dirs"
 
 # Decide script action
 case "$1" in
@@ -134,6 +135,7 @@ if [ -z "$QUEEN_CONTAINER_IN_DOCKER" ] || $EPHEMERAL ; then
       -d \
       --network=$NETWORK \
       --name $QUEEN_CONTAINER_NAME \
+      -v $INIT_ROOT_DATA_DIR/$QUEEN_CONTAINER_NAME:/home/bee/.bee \
       $EXTRA_DOCKER_PARAMS \
       $EXTRA_QUEEN_PARAMS \
       $BEE_IMAGE \
@@ -173,6 +175,7 @@ for i in $(seq 1 1 $WORKERS); do
         -d \
         --network=$NETWORK \
         --name $WORKER_NAME \
+        -v $INIT_ROOT_DATA_DIR/$WORKER_NAME:/home/bee/.bee \
         $EXTRA_DOCKER_PARAMS \
         $EXTRA_WORKER_PARAMS \
         $BEE_IMAGE \
