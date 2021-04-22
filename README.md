@@ -9,6 +9,12 @@ Currently, the repository supports running Bee nodes up to 5 by default.
 # Usage
 You can setup the whole environment that Bee needs by running some scripts
 
+Create the common Docker network for the environment with
+
+```sh
+$ ./scripts/network.sh
+```
+
 To start the blockchain, run the following command in the root directory of the project:
 
 ```sh
