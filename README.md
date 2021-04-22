@@ -34,5 +34,5 @@ and the configured accounts will get 1 ether and 100 BZZ Token.
 After all above went successfully you can start the Bee nodes.
 
 ```sh
-$ ./scripts/bee.sh --workers=4
+$ ./scripts/bee.sh start --workers=4
 ```
