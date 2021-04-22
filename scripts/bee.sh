@@ -68,7 +68,9 @@ PORT_MAPS=2
 NETWORK="swarm-test-network"
 SWAP=true
 SWAP_FACTORY_ADDRESS="0x5b1869D9A4C187F2EAa108f3062412ecf0526b24"
-INIT_ROOT_DATA_DIR="$(pwd)/bee-data-dirs"
+MY_PATH=`dirname "$0"`              # relative
+MY_PATH=`( cd "$MY_PATH" && pwd )`  # absolutized and normalized
+INIT_ROOT_DATA_DIR="$MY_PATH/bee-data-dirs"
 
 # Decide script action
 case "$1" in
