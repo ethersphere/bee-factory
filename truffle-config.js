@@ -13,10 +13,13 @@ module.exports = {
     solc: {
       version: "0.6.12",    // Fetch exact version from solc-bin (default: truffle's version)
       docker: true,
-      optimizer: {
-        enabled: true,
-        runs: 200   // Optimize for how many times you intend to run the code
-      },
+      settings: {
+        optimizer: {
+          enabled: true,
+          runs: 200   // Optimize for how many times you intend to run the code
+        },
+        evmVersion: "istanbul"
+      }
     }
   },
 
