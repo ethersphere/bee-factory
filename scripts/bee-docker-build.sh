@@ -21,6 +21,9 @@ BEE_VERSION=0.5.3
 # Make sure we the user has permission all the files
 sudo chmod 777 -R "$MY_PATH/bee-data-dirs"
 
+echo "Update common dockerfile"
+dockerfile "$MY_PATH/bee-data-dirs/Dockerfile" "$BEE_VERSION"
+
 echo "Build Dockerfiles"
 for BEE_DIR in $BEE_DIRS
 do
