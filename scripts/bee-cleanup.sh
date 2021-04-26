@@ -2,6 +2,7 @@
 echo "Removing 'localstore' and 'statestore' folders from Bee datadirs..."
 
 MY_PATH=`dirname "$0"`
+MY_PATH=`( cd "$MY_PATH" && pwd )`
 BEE_DIRS=`ls $MY_PATH/bee-data-dirs`
 for BEE_DIR in $BEE_DIRS
 do
