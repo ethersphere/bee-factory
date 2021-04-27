@@ -61,6 +61,7 @@ MY_PATH=`( cd "$MY_PATH" && pwd )`  # absolutized and normalized
 # Check used system variable set
 source $MY_PATH/utils/check-variable-defined.sh BEE_ENV_PREFIX
 source $MY_PATH/utils/check-variable-defined.sh BEE_VERSION
+source $MY_PATH/utils/check-variable-defined.sh BEE_IMAGE_PREFIX
 
 # Init variables
 EPHEMERAL=false
@@ -146,7 +147,7 @@ fi
 if [ -z "$QUEEN_CONTAINER_IN_DOCKER" ] || $EPHEMERAL ; then
     DOCKER_IMAGE="$BEE_IMAGE"
     if $OWN_IMAGE ; then
-        DOCKER_IMAGE="ethersphere/$QUEEN_CONTAINER_NAME:$BEE_VERSION"
+        DOCKER_IMAGE="$BEE_IMAGE_PREFIX/$QUEEN_CONTAINER_NAME:$BEE_VERSION"
     else
         EXTRA_QUEEN_PARAMS="-v $INIT_ROOT_DATA_DIR/$QUEEN_CONTAINER_NAME:/home/bee/.bee"
     fi
@@ -188,7 +189,7 @@ for i in $(seq 1 1 $WORKERS); do
         EXTRA_WORKER_PARAMS=""
         DOCKER_IMAGE="$BEE_IMAGE"
         if $OWN_IMAGE ; then
-            DOCKER_IMAGE="ethersphere/$WORKER_NAME:$BEE_VERSION"
+            DOCKER_IMAGE="$BEE_IMAGE_PREFIX/$WORKER_NAME:$BEE_VERSION"
         else
             EXTRA_WORKER_PARAMS="-v $INIT_ROOT_DATA_DIR/$WORKER_NAME:/home/bee/.bee"
         fi
