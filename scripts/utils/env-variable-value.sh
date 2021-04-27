@@ -11,9 +11,6 @@ echo_env_variable_value() {
     VALUE=${VALUE//\"/}
     VALUE=${VALUE//\'/}
     echo $VALUE
-    #echo $ASSIGNMENT_STRING
-    #echo "Variable $1 has not been set"
-    #exit 1
   else
     echo $REF
   fi
