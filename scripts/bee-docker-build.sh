@@ -23,7 +23,7 @@ BEE_IMAGE_PREFIX=`$MY_PATH/utils/env-variable-value.sh BEE_IMAGE_PREFIX`
 
 # Make sure we the user has permission all the files
 echo "Build Bee Docker images..."
-echo "You may need to pass your password for sudo permission to remove the bee-data folders"
+echo "You may need to pass your password for sudo permission to give the right permission to the bee-data folders"
 sudo chmod 777 -R "$MY_PATH/bee-data-dirs"
 
 echo "Update common dockerfile"
