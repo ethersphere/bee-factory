@@ -18,9 +18,8 @@ dockerbuild() {
 MY_PATH=`dirname "$0"`
 MY_PATH=`( cd "$MY_PATH" && pwd )`
 BEE_DIRS=`ls $MY_PATH/bee-data-dirs`
-
-source $MY_PATH/utils/check-variable-defined.sh BEE_VERSION
-source $MY_PATH/utils/check-variable-defined.sh BEE_IMAGE_PREFIX
+BEE_VERSION=`$MY_PATH/utils/env-variable-value.sh BEE_VERSION`
+BEE_IMAGE_PREFIX=`$MY_PATH/utils/env-variable-value.sh BEE_IMAGE_PREFIX`
 
 # Make sure we the user has permission all the files
 sudo chmod 777 -R "$MY_PATH/bee-data-dirs"

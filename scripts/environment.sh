@@ -28,8 +28,9 @@ stop() {
 MY_PATH=`dirname "$0"`              # relative
 MY_PATH=`( cd "$MY_PATH" && pwd )`  # absolutized and normalized
 # Check used system variable set
-source $MY_PATH/utils/check-variable-defined.sh BEE_ENV_PREFIX
-source $MY_PATH/utils/check-variable-defined.sh BEE_VERSION
+BEE_ENV_PREFIX=`$MY_PATH/utils/env-variable-value.sh BEE_ENV_PREFIX`
+BEE_IMAGE_PREFIX=`$MY_PATH/utils/env-variable-value.sh BEE_IMAGE_PREFIX`
+BEE_VERSION=`$MY_PATH/utils/env-variable-value.sh BEE_VERSION`
 
 # Init variables
 EPHEMERAL=false
@@ -88,7 +89,7 @@ else
     if $EPHEMERAL ; then
         BLOCKCHAIN_ARGUMENTS="$BLOCKCHAIN_ARGUMENTS --rm"
     fi
-    docker run $BLOCKCHAIN_ARGUMENTS $SWARM_BLOCKCHAIN_NAME 
+    docker run $BLOCKCHAIN_ARGUMENTS $BEE_IMAGE_PREFIX/$SWARM_BLOCKCHAIN_NAME:$BEE_VERSION
 fi
 
 # Wait for blockchain service initializes

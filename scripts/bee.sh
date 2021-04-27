@@ -59,9 +59,9 @@ log_queen() {
 MY_PATH=`dirname "$0"`              # relative
 MY_PATH=`( cd "$MY_PATH" && pwd )`  # absolutized and normalized
 # Check used system variable set
-source $MY_PATH/utils/check-variable-defined.sh BEE_ENV_PREFIX
-source $MY_PATH/utils/check-variable-defined.sh BEE_VERSION
-source $MY_PATH/utils/check-variable-defined.sh BEE_IMAGE_PREFIX
+BEE_IMAGE_PREFIX=`$MY_PATH/utils/env-variable-value.sh BEE_IMAGE_PREFIX`
+BEE_VERSION=`$MY_PATH/utils/env-variable-value.sh BEE_VERSION`
+BEE_ENV_PREFIX=`$MY_PATH/utils/env-variable-value.sh BEE_ENV_PREFIX`
 
 # Init variables
 EPHEMERAL=false
