@@ -100,7 +100,7 @@ BEE_SH_ARGUMENTS="--workers=$WORKERS --own-image"
 if $EPHEMERAL ; then
     BEE_SH_ARGUMENTS="$BEE_SH_ARGUMENTS --ephemeral"
 fi
-if $LOG ; then
+if [ ! $LOG ] ; then
     BEE_SH_ARGUMENTS="$BEE_SH_ARGUMENTS --detach"
 fi
 
