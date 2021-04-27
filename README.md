@@ -10,14 +10,16 @@ Currently, the repository supports running Bee nodes up to 5 by default.
 The whole Bee environment (with blockchain) can be started by [running one script](###Run-Environment),
 but for that you need to have the necessary Docker images, which is possible to build yourself by [running some scripts](###Setup-the-environment)
 
-## Setup the environment
-
-First you have to set all global variables that the scripts will use.
+First you may want to set all global variables that the scripts will use.
 For that, there is a [.env](scripts/.env) file which contains all necessary variables that you need.
 
 ```sh
 $ set -a && source ./scripts/.env && set +a
 ```
+
+If you do not set these global variables, the scripts will use those which are available in the [.env](scripts/.env) file.
+
+## Setup the environment
 
 Create the common Docker network for the environment with
 
