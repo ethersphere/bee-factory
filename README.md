@@ -72,8 +72,8 @@ $ ./scripts/blockchain-docker-build.sh
 
 ## Run Environment
 
-If you have all Docker images that your [environment](scripts/.env) requires,
-start the environment by yourself
+If you have all Docker images that your [environment file](scripts/.env) requires,
+start the Bee cluster
 
 ```sh
 $ ./scripts/environment.sh start
