@@ -26,9 +26,9 @@ USAGE
 }
 
 stop() {
-    echo "Stop following containers:"
+    echo "Stop Bee following containers:"
     docker container stop $QUEEN_CONTAINER_NAME;
-    WORKER_NAMES=`docker container ls -f name="$WORKER_CONTAINER_NAME*" --format "{{.Names}}"`
+    WORKER_NAMES=$(docker container ls -f name="$WORKER_CONTAINER_NAME*" --format "{{.Names}}")
     for WORKER_NAME in $WORKER_NAMES; do
         docker container stop "$WORKER_NAME"
     done

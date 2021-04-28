@@ -68,6 +68,7 @@ do
         ;;
         --detach)
         LOG=false
+        shift 1
         ;;
         --help)
         usage
@@ -100,10 +101,16 @@ BEE_SH_ARGUMENTS="--workers=$WORKERS --own-image"
 if $EPHEMERAL ; then
     BEE_SH_ARGUMENTS="$BEE_SH_ARGUMENTS --ephemeral"
 fi
-if [ ! $LOG ] ; then
+if ! $LOG ; then
     BEE_SH_ARGUMENTS="$BEE_SH_ARGUMENTS --detach"
 fi
-
+echo "$BEE_SH_ARGUMENTS"
 # Call bee.sh with the passed arguments
 echo "Start Bee nodes..."
 $MY_PATH/bee.sh start $BEE_SH_ARGUMENTS
+
+# If the code run reach this point without detach flag, 
+# then the user interrupted the log process in the bee.sh
+if $LOG ; then
+    docker stop $SWARM_BLOCKCHAIN_NAME
+fi
