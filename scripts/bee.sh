@@ -56,12 +56,12 @@ log_queen() {
     docker logs --tail 25 -f $QUEEN_CONTAINER_NAME
 }
 
-MY_PATH=`dirname "$0"`              # relative
-MY_PATH=`( cd "$MY_PATH" && pwd )`  # absolutized and normalized
+MY_PATH=$(dirname "$0")              # relative
+MY_PATH=$( cd "$MY_PATH" && pwd )  # absolutized and normalized
 # Check used system variable set
-BEE_IMAGE_PREFIX=`$MY_PATH/utils/env-variable-value.sh BEE_IMAGE_PREFIX`
-BEE_VERSION=`$MY_PATH/utils/env-variable-value.sh BEE_VERSION`
-BEE_ENV_PREFIX=`$MY_PATH/utils/env-variable-value.sh BEE_ENV_PREFIX`
+BEE_IMAGE_PREFIX=$($MY_PATH/utils/env-variable-value.sh BEE_IMAGE_PREFIX)
+BEE_VERSION=$($MY_PATH/utils/env-variable-value.sh BEE_VERSION)
+BEE_ENV_PREFIX=$($MY_PATH/utils/env-variable-value.sh BEE_ENV_PREFIX)
 
 # Init variables
 EPHEMERAL=false
@@ -71,7 +71,7 @@ QUEEN_CONTAINER_NAME="$BEE_ENV_PREFIX-queen"
 WORKER_CONTAINER_NAME="$BEE_ENV_PREFIX-worker"
 SWARM_BLOCKCHAIN_NAME="$BEE_ENV_PREFIX-blockchain"
 NETWORK="$BEE_ENV_PREFIX-network"
-QUEEN_CONTAINER_IN_DOCKER=`docker container ls -qaf name=$QUEEN_CONTAINER_NAME`
+QUEEN_CONTAINER_IN_DOCKER=$(docker container ls -qaf name=$QUEEN_CONTAINER_NAME)
 BEE_BASE_IMAGE="ethersphere/bee"
 OWN_IMAGE=false
 BEE_PASSWORD="password"
@@ -180,7 +180,7 @@ fi
 # Start Bee workers
 for i in $(seq 1 1 $WORKERS); do
     WORKER_NAME="$WORKER_CONTAINER_NAME-$i"
-    WORKER_CONTAINER_IN_DOCKER=`docker container ls -qaf name=$WORKER_NAME`
+    WORKER_CONTAINER_IN_DOCKER=$(docker container ls -qaf name=$WORKER_NAME)
     if [ -z "$WORKER_CONTAINER_IN_DOCKER" ] || $EPHEMERAL ; then
         # fetch queen underlay address
         fetch_queen_underlay_addr
