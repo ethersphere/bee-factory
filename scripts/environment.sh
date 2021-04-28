@@ -104,7 +104,7 @@ fi
 if ! $LOG ; then
     BEE_SH_ARGUMENTS="$BEE_SH_ARGUMENTS --detach"
 fi
-echo "$BEE_SH_ARGUMENTS"
+
 # Call bee.sh with the passed arguments
 echo "Start Bee nodes..."
 $MY_PATH/bee.sh start $BEE_SH_ARGUMENTS
