@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo_env_variable_value() {
-  local -n REF=$1
+  local REF=$(printenv $1)
 
   # There were no global set
   if [ -z "$REF" ] ; then
