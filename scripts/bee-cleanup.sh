@@ -26,7 +26,7 @@ do
 done
 
 echo "Removing built Blockchain Docker image..."
-BLOCKCHAIN_DOCKER_IMAGE=$(docker image ls -qaf reference="$BEE_IMAGE_PREFIX/$BEE_ENV_PREFIX-blockchain:$BEE_VERSION")
+BLOCKCHAIN_DOCKER_IMAGE=$(docker image ls -qaf reference="$BEE_IMAGE_PREFIX/$BEE_ENV_PREFIX-blockchain:$BLOCKCHAIN_VERSION")
 
 if [ -n "$BLOCKCHAIN_DOCKER_IMAGE" ] ; then
   docker image rm "$BLOCKCHAIN_DOCKER_IMAGE"
