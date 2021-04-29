@@ -30,7 +30,7 @@ MY_PATH=$( cd "$MY_PATH" && pwd )  # absolutized and normalized
 # Check used system variable set
 BEE_ENV_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_ENV_PREFIX)
 BEE_IMAGE_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_IMAGE_PREFIX)
-BEE_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BEE_VERSION)
+BLOCKCHAIN_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BLOCKCHAIN_VERSION)
 
 # Init variables
 EPHEMERAL=false
@@ -88,7 +88,7 @@ if [ -z "$BLOCKCHAIN_CONTAINER" ] ; then
     if $EPHEMERAL ; then
         BLOCKCHAIN_ARGUMENTS="$BLOCKCHAIN_ARGUMENTS --rm"
     fi
-    docker run $BLOCKCHAIN_ARGUMENTS $BEE_IMAGE_PREFIX/$SWARM_BLOCKCHAIN_NAME:$BEE_VERSION
+    docker run $BLOCKCHAIN_ARGUMENTS $BEE_IMAGE_PREFIX/$SWARM_BLOCKCHAIN_NAME:$BLOCKCHAIN_VERSION
 else
     docker start $BLOCKCHAIN_CONTAINER
 fi
