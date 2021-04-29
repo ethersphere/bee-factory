@@ -7,7 +7,7 @@ echo_env_variable_value() {
   if [ -z "$REF" ] ; then
     MY_PATH=$(dirname "$0")
     ENV_PATH=$( cd "$MY_PATH/.." && pwd )
-    VALUE=$(cat "$ENV_PATH/.env" | grep "^$1" | cut -d= -f2)
+    VALUE=$(grep "^$1=" "$ENV_PATH/.env" | cut -d= -f2)
     VALUE=${VALUE//\"/}
     VALUE=${VALUE//\'/}
     echo "$VALUE"
