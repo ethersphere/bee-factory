@@ -17,9 +17,9 @@ USAGE
 
 stop() {
     #Stop Bee nodes
-    docker stop $SWARM_BLOCKCHAIN_NAME
+    docker stop "$SWARM_BLOCKCHAIN_NAME"
     #Stop blockchain nodes
-    $MY_PATH/bee.sh stop
+    "$MY_PATH/bee.sh" stop
 
     trap - SIGINT
     exit 0;
@@ -28,9 +28,9 @@ stop() {
 MY_PATH=$(dirname "$0")              # relative
 MY_PATH=$( cd "$MY_PATH" && pwd )  # absolutized and normalized
 # Check used system variable set
-BEE_ENV_PREFIX=$($MY_PATH/utils/env-variable-value.sh BEE_ENV_PREFIX)
-BEE_IMAGE_PREFIX=$($MY_PATH/utils/env-variable-value.sh BEE_IMAGE_PREFIX)
-BEE_VERSION=$($MY_PATH/utils/env-variable-value.sh BEE_VERSION)
+BEE_ENV_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_ENV_PREFIX)
+BEE_IMAGE_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_IMAGE_PREFIX)
+BEE_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BEE_VERSION)
 
 # Init variables
 EPHEMERAL=false
@@ -107,7 +107,7 @@ fi
 
 # Call bee.sh with the passed arguments
 echo "Start Bee nodes..."
-$MY_PATH/bee.sh start $BEE_SH_ARGUMENTS
+"$MY_PATH/bee.sh" start $BEE_SH_ARGUMENTS
 
 # If the code run reach this point without detach flag, 
 # then the user interrupted the log process in the bee.sh

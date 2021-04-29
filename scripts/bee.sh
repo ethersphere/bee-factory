@@ -27,7 +27,7 @@ USAGE
 
 stop() {
     echo "Stop Bee following containers:"
-    docker container stop $QUEEN_CONTAINER_NAME;
+    docker container stop "$QUEEN_CONTAINER_NAME";
     WORKER_NAMES=$(docker container ls -f name="$WORKER_CONTAINER_NAME*" --format "{{.Names}}")
     for WORKER_NAME in $WORKER_NAMES; do
         docker container stop "$WORKER_NAME"
@@ -38,7 +38,7 @@ stop() {
 }
 
 fetch_queen_underlay_addr() {
-    if [[ ! -z "$QUEEN_UNDERLAY_ADDRESS" ]] ; then return; fi
+    if [[ -n "$QUEEN_UNDERLAY_ADDRESS" ]] ; then return; fi
 
     while : ; do
         QUEEN_UNDERLAY_ADDRESS=$(curl -s localhost:1635/addresses | python -mjson.tool 2>&1 | grep "/ip4/" | awk '!/127.0.0.1/' | xargs)
@@ -53,15 +53,15 @@ fetch_queen_underlay_addr() {
 
 log_queen() {
     trap stop SIGINT
-    docker logs --tail 25 -f $QUEEN_CONTAINER_NAME
+    docker logs --tail 25 -f "$QUEEN_CONTAINER_NAME"
 }
 
 MY_PATH=$(dirname "$0")              # relative
 MY_PATH=$( cd "$MY_PATH" && pwd )  # absolutized and normalized
 # Check used system variable set
-BEE_IMAGE_PREFIX=$($MY_PATH/utils/env-variable-value.sh BEE_IMAGE_PREFIX)
-BEE_VERSION=$($MY_PATH/utils/env-variable-value.sh BEE_VERSION)
-BEE_ENV_PREFIX=$($MY_PATH/utils/env-variable-value.sh BEE_ENV_PREFIX)
+BEE_IMAGE_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_IMAGE_PREFIX)
+BEE_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BEE_VERSION)
+BEE_ENV_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_ENV_PREFIX)
 
 # Init variables
 EPHEMERAL=false
@@ -71,7 +71,7 @@ QUEEN_CONTAINER_NAME="$BEE_ENV_PREFIX-queen"
 WORKER_CONTAINER_NAME="$BEE_ENV_PREFIX-worker"
 SWARM_BLOCKCHAIN_NAME="$BEE_ENV_PREFIX-blockchain"
 NETWORK="$BEE_ENV_PREFIX-network"
-QUEEN_CONTAINER_IN_DOCKER=$(docker container ls -qaf name=$QUEEN_CONTAINER_NAME)
+QUEEN_CONTAINER_IN_DOCKER=$(docker container ls -qaf name="$QUEEN_CONTAINER_NAME")
 BEE_BASE_IMAGE="ethersphere/bee"
 OWN_IMAGE=false
 BEE_PASSWORD="password"
@@ -140,7 +140,7 @@ done
 BEE_IMAGE="$BEE_BASE_IMAGE:$BEE_VERSION"
 
 if $EPHEMERAL ; then
-    EXTRA_DOCKER_PARAMS=" --rm"
+    EXTRA_DOCKER_PARAMS="--rm"
 fi
 
 # Start Bee Queen
@@ -151,21 +151,21 @@ if [ -z "$QUEEN_CONTAINER_IN_DOCKER" ] || $EPHEMERAL ; then
     else
         EXTRA_QUEEN_PARAMS="-v $INIT_ROOT_DATA_DIR/$QUEEN_CONTAINER_NAME:/home/bee/.bee"
     fi
-    if [ $PORT_MAPS -ge 1 ] ; then
+    if [ "$PORT_MAPS" -ge 1 ] ; then
         EXTRA_QUEEN_PARAMS="$EXTRA_QUEEN_PARAMS -p 127.0.0.1:1633-1635:1633-1635"
     fi
 
     echo "start Bee Queen process"
     docker run \
       -d \
-      --network=$NETWORK \
-      --name $QUEEN_CONTAINER_NAME \
+      --network="$NETWORK" \
+      --name="$QUEEN_CONTAINER_NAME" \
       $EXTRA_DOCKER_PARAMS \
       $EXTRA_QUEEN_PARAMS \
       $DOCKER_IMAGE \
         start \
-        --password $BEE_PASSWORD \
-        --bootnode=$QUEEN_BOOTNODE \
+        --password "$BEE_PASSWORD" \
+        --bootnode="$QUEEN_BOOTNODE" \
         --debug-api-enable \
         --verbosity=4 \
         --swap-enable=$SWAP \
@@ -178,9 +178,9 @@ else
 fi
 
 # Start Bee workers
-for i in $(seq 1 1 $WORKERS); do
+for i in $(seq 1 1 "$WORKERS"); do
     WORKER_NAME="$WORKER_CONTAINER_NAME-$i"
-    WORKER_CONTAINER_IN_DOCKER=$(docker container ls -qaf name=$WORKER_NAME)
+    WORKER_CONTAINER_IN_DOCKER=$(docker container ls -qaf name="$WORKER_NAME")
     if [ -z "$WORKER_CONTAINER_IN_DOCKER" ] || $EPHEMERAL ; then
         # fetch queen underlay address
         fetch_queen_underlay_addr
@@ -191,11 +191,11 @@ for i in $(seq 1 1 $WORKERS); do
         if $OWN_IMAGE ; then
             DOCKER_IMAGE="$BEE_IMAGE_PREFIX/$WORKER_NAME:$BEE_VERSION"
         else
-            EXTRA_WORKER_PARAMS="-v $INIT_ROOT_DATA_DIR/$WORKER_NAME:/home/bee/.bee"
+            EXTRA_WORKER_PARAMS="$EXTRA_WORKER_PARAMS -v $INIT_ROOT_DATA_DIR/$WORKER_NAME:/home/bee/.bee"
         fi
         if [ $PORT_MAPS -gt $i ] ; then
-            PORT_START=$((1633+(10000*$i)))
-            PORT_END=$(($PORT_START + 2))
+            PORT_START=$((1633+(10000*i)))
+            PORT_END=$((PORT_START + 2))
             EXTRA_WORKER_PARAMS="$EXTRA_WORKER_PARAMS -p 127.0.0.1:$PORT_START-$PORT_END:1633-1635"
         fi
 
@@ -203,13 +203,13 @@ for i in $(seq 1 1 $WORKERS); do
         echo "start Bee worker $i process"
         docker run \
         -d \
-        --network=$NETWORK \
-        --name $WORKER_NAME \
+        --network="$NETWORK" \
+        --name="$WORKER_NAME" \
         $EXTRA_DOCKER_PARAMS \
         $EXTRA_WORKER_PARAMS \
         $DOCKER_IMAGE \
           start \
-          --password $BEE_PASSWORD \
+          --password "$BEE_PASSWORD" \
           --bootnode="$QUEEN_UNDERLAY_ADDRESS" \
           --debug-api-enable \
           --swap-enable=$SWAP \

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 dockerfile() {
-    cat << DOCKERFILE > $1
+    cat << DOCKERFILE > "$1"
 FROM ethersphere/bee:$2
 
 # Sample docker file
@@ -12,14 +12,14 @@ DOCKERFILE
 dockerbuild() {
   IMAGE_NAME=$(basename "$1")
   IMAGE_NAME="$4/$IMAGE_NAME"
-  docker build "$1" --no-cache -f "$2" -t $IMAGE_NAME:$3
+  docker build "$1" --no-cache -f "$2" -t "$IMAGE_NAME:$3"
 }
 
 MY_PATH=$(dirname "$0")
 MY_PATH=$( cd "$MY_PATH" && pwd )
-BEE_DIRS=$(ls $MY_PATH/bee-data-dirs)
-BEE_VERSION=$($MY_PATH/utils/env-variable-value.sh BEE_VERSION)
-BEE_IMAGE_PREFIX=$($MY_PATH/utils/env-variable-value.sh BEE_IMAGE_PREFIX)
+BEE_DIRS=$(ls "$MY_PATH/bee-data-dirs")
+BEE_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BEE_VERSION)
+BEE_IMAGE_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_IMAGE_PREFIX)
 
 # Make sure we the user has permission all the files
 echo "Build Bee Docker images..."

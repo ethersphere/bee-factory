@@ -15,12 +15,12 @@ done
 
 echo "Removing built Docker images..."
 
-BEE_ENV_PREFIX=$($MY_PATH/utils/env-variable-value.sh BEE_ENV_PREFIX)
-BEE_VERSION=$($MY_PATH/utils/env-variable-value.sh BEE_VERSION)
-BEE_IMAGE_PREFIX=$($MY_PATH/utils/env-variable-value.sh BEE_IMAGE_PREFIX)
-DOCKER_IMAGES=$(docker image ls -qaf reference=$BEE_IMAGE_PREFIX/$BEE_ENV_PREFIX*:$BEE_VERSION)
+BEE_ENV_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_ENV_PREFIX)
+BEE_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BEE_VERSION)
+BEE_IMAGE_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_IMAGE_PREFIX)
+DOCKER_IMAGES=$(docker image ls -qaf reference="$BEE_IMAGE_PREFIX/$BEE_ENV_PREFIX*:$BEE_VERSION")
 for DOCKER_IMAGE in $DOCKER_IMAGES
 do
   echo "$DOCKER_IMAGE"
-  docker image rm $DOCKER_IMAGE
+  docker image rm "$DOCKER_IMAGE"
 done
