@@ -106,6 +106,8 @@ QUEEN_BOOTNODE=""
 PORT_MAPS=2
 SWAP=true
 SWAP_FACTORY_ADDRESS="0x5b1869D9A4C187F2EAa108f3062412ecf0526b24"
+POSTAGE_STAMP_ADDRESS="0xCfEB869F69431e42cdB54A4F4f105C19C080A601"
+PRICE_ORACLE_ADDRESS="0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B"
 INIT_ROOT_DATA_DIR="$MY_PATH/bee-data-dirs"
 PAYMENT_THRESHOLD="10000000000000"
 
@@ -204,6 +206,8 @@ if [ -z "$QUEEN_CONTAINER_IN_DOCKER" ] || $EPHEMERAL ; then
         --swap-endpoint="http://$SWARM_BLOCKCHAIN_NAME:9545" \
         --swap-factory-address=$SWAP_FACTORY_ADDRESS \
         --payment-threshold="$PAYMENT_THRESHOLD" \
+        --postage-stamp-address=$POSTAGE_STAMP_ADDRESS \
+        --price-oracle-address=$PRICE_ORACLE_ADDRESS \
         --welcome-message="You have found the queen of the beehive..." \
         --cors-allowed-origins="*"
 else
@@ -249,6 +253,8 @@ for i in $(seq 1 1 "$WORKERS"); do
           --swap-endpoint="http://$SWARM_BLOCKCHAIN_NAME:9545" \
           --swap-factory-address=$SWAP_FACTORY_ADDRESS \
           --payment-threshold="$PAYMENT_THRESHOLD" \
+          --postage-stamp-address=$POSTAGE_STAMP_ADDRESS \
+          --price-oracle-address=$PRICE_ORACLE_ADDRESS \
           --welcome-message="I'm just Bee worker ${i} in the beehive." \
           --cors-allowed-origins="*"
   else
