@@ -17,7 +17,7 @@ dockerbuild() {
 
 MY_PATH=$(dirname "$0")
 MY_PATH=$( cd "$MY_PATH" && pwd )
-BEE_DIRS=$(ls "$MY_PATH/bee-data-dirs")
+BEE_DIRS=$(ls -d "$MY_PATH"/bee-data-dirs/*/)
 BEE_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BEE_VERSION)
 BEE_IMAGE_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_IMAGE_PREFIX)
 
@@ -33,7 +33,7 @@ echo "Build Dockerfiles"
 for BEE_DIR in $BEE_DIRS
 do
   echo "$BEE_DIR"
-  dockerbuild "$MY_PATH/bee-data-dirs/$BEE_DIR" "$MY_PATH/bee-data-dirs/Dockerfile" "$BEE_VERSION" "$BEE_IMAGE_PREFIX"
+  dockerbuild "$BEE_DIR" "$MY_PATH/bee-data-dirs/Dockerfile" "$BEE_VERSION" "$BEE_IMAGE_PREFIX"
 done
 
 echo "Docker image builds were successful!"
