@@ -13,7 +13,7 @@ do
   sudo rm -rf "$BEE_DIR_PATH/statestore"
 done
 
-echo "Removing built Docker images..."
+echo "Removing built Bee Docker images..."
 
 BEE_ENV_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_ENV_PREFIX)
 BEE_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BEE_VERSION)
@@ -24,3 +24,10 @@ do
   echo "$DOCKER_IMAGE"
   docker image rm "$DOCKER_IMAGE"
 done
+
+echo "Removing built Blockchain Docker image..."
+BLOCKCHAIN_DOCKER_IMAGE=$(docker image ls -qaf reference="$BEE_IMAGE_PREFIX/$BEE_ENV_PREFIX-blockchain:$BEE_VERSION")
+
+if [ -n "$BLOCKCHAIN_DOCKER_IMAGE" ] ; then
+  docker image rm "$BLOCKCHAIN_DOCKER_IMAGE"
+fi
