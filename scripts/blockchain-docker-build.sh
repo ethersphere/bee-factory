@@ -10,3 +10,7 @@ NAME="$BEE_ENV_PREFIX-blockchain"
 
 echo "Make a snapshot from the blockchain..."
 docker commit $NAME $BEE_IMAGE_PREFIX/$NAME:$BLOCKCHAIN_VERSION
+
+echo "Stop and remove running blockchain node that the image built on..."
+docker container stop $NAME
+docker container rm $NAME
