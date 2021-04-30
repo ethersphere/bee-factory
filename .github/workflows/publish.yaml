@@ -1,0 +1,34 @@
+on:
+  push:
+    branches:
+      - 'master'
+  pull_request:
+    branches:
+      - '**'
+
+env:
+  BEE_IMAGE_PREFIX: 'docker.pkg.github.com/ethersphere/bee-factory'
+
+jobs:
+  bee-images:
+    name: Build and publish images
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [12.x]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: Auth to Github Package Docker Registry
+        if: github.ref == 'refs/heads/master' && success()
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login https://docker.pkg.github.com -u ${GITHUB_ACTOR} --password-stdin
+      - name: Build images
+        run: |
+          npm run build:environment
+      - name: Publish if master branch
+        if: github.ref == 'refs/heads/master' && success()
+        run: |
+          npn run publish:environment
