@@ -5,8 +5,10 @@
   "scripts": {
     "compile:chequebook": "truffle compile",
     "migrate:chequebook": "truffle migrate",
-    "test:chequebook": "truffle test",
-    "supply": "truffle exec src/supply.js"
+    "supply": "truffle exec src/supply.js",
+    "build:env": "./scripts/build-environment.sh",
+    "publish:env": "./scripts/publish-environment.sh",
+    "run:env": "./scripts/environment.sh"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^3.1.0",

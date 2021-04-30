@@ -27,8 +27,8 @@ jobs:
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login https://docker.pkg.github.com -u ${GITHUB_ACTOR} --password-stdin
       - name: Build images
         run: |
-          npm run build:environment
+          npm run build:env
       - name: Publish if master branch
         if: github.ref == 'refs/heads/master' && success()
         run: |
-          npn run publish:environment
+          npn run publish:env
