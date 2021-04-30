@@ -208,6 +208,7 @@ if [ -z "$QUEEN_CONTAINER_IN_DOCKER" ] || $EPHEMERAL ; then
         --payment-threshold="$PAYMENT_THRESHOLD" \
         --postage-stamp-address=$POSTAGE_STAMP_ADDRESS \
         --price-oracle-address=$PRICE_ORACLE_ADDRESS \
+        --full-node=true \
         --welcome-message="You have found the queen of the beehive..." \
         --cors-allowed-origins="*"
 else
@@ -255,6 +256,7 @@ for i in $(seq 1 1 "$WORKERS"); do
           --payment-threshold="$PAYMENT_THRESHOLD" \
           --postage-stamp-address=$POSTAGE_STAMP_ADDRESS \
           --price-oracle-address=$PRICE_ORACLE_ADDRESS \
+          --full-node=true \
           --welcome-message="I'm just Bee worker ${i} in the beehive." \
           --cors-allowed-origins="*"
   else
