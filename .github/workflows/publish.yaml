@@ -28,7 +28,7 @@ jobs:
         with:
           fetch-depth: 1
       - name: Auth to Github Package Docker Registry
-        if: (github.ref == 'refs/heads/master' || "${{ github.event.inputs.buildImage }}" == "true") && success()
+        if: (github.ref == 'refs/heads/master' || ${{ github.event.inputs.buildImage }} == 'true') && success()
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login https://docker.pkg.github.com -u ${GITHUB_ACTOR} --password-stdin
       - name: Install npm deps
@@ -38,6 +38,6 @@ jobs:
         run: |
           npm run build:env
       - name: Publish if master branch
-        if: (github.ref == 'refs/heads/master' || "${{ github.event.inputs.buildImage }}" == "true") && success()
+        if: (github.ref == 'refs/heads/master' || ${{ github.event.inputs.buildImage }} == 'true') && success()
         run: |
-          npn run publish:env
+          npm run publish:env
