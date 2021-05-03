@@ -1,9 +1,9 @@
 on:
   workflow_dispatch:
-  inputs:
-    buildImage:
-      description: 'Build Docker Image according to the environment'
-      default: 'false'
+    inputs:
+      buildImage:
+        description: 'Build Docker Image according to the environment'
+        default: 'false'
   push:
     branches:
       - 'master'
