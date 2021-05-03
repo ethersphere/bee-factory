@@ -59,8 +59,8 @@ log_queen() {
 MY_PATH=$(dirname "$0")              # relative
 MY_PATH=$( cd "$MY_PATH" && pwd )  # absolutized and normalized
 # Check used system variable set
+BEE_VERSION=$("$MY_PATH/utils/build-image-tag.sh" get)
 BEE_IMAGE_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_IMAGE_PREFIX)
-BEE_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BEE_VERSION)
 BEE_ENV_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_ENV_PREFIX)
 
 # Init variables

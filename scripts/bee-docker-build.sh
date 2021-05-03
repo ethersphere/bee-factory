@@ -29,6 +29,15 @@ sudo chmod 777 -R "$MY_PATH/bee-data-dirs"
 echo "Update common dockerfile"
 dockerfile "$MY_PATH/bee-data-dirs/Dockerfile" "$BEE_VERSION"
 
+# If the user has been set the COMMIT_VERSION_TAG env variable
+# The image will be built with the tag that is the bee version string
+COMMIT_VERSION_TAG="$("$MY_PATH/utils/env-variable-value.sh" COMMIT_VERSION_TAG)"
+if [ "$COMMIT_VERSION_TAG" == "true" ] ; then
+  # somehow the version command's output goes to the stderr
+  BEE_VERSION=$(docker run --rm ethersphere/bee:$BEE_VERSION version 2>&1)
+  "$MY_PATH/utils/build-image-tag.sh" set "$BEE_VERSION"
+fi
+
 echo "Build Dockerfiles"
 for BEE_DIR in $BEE_DIRS
 do
