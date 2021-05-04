@@ -4,6 +4,12 @@ on:
       buildImage:
         description: 'Build Docker Image according to the environment'
         default: 'false'
+      commitVersionTag:
+        description: 'The image tag will be retrieved from the bee version command'
+        default: 'false'
+      beeVersion:
+        description: 'The official bee image tag that the image will be built on'
+        default: 'latest'
   push:
     branches:
       - 'master'
@@ -38,6 +44,8 @@ jobs:
         run: |
           npm run build:env
       - name: Publish if it was clicked manually
-        if: ${{ github.event.inputs.buildImage }} == 'true' && success()
+        if: "${{ github.event.inputs.buildImage }}" == 'true' && success()
         run: |
+          COMMIT_VERSION_TAG="${{ github.event.inputs.commitVersionTag }}"
+          BEE_VERSION="${{ github.event.inputs.beeVersion }}"
           npm run publish:env

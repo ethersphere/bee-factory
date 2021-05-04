@@ -15,8 +15,8 @@ done
 
 echo "Removing built Bee Docker images..."
 
+BEE_VERSION=$("$MY_PATH/utils/build-image-tag.sh" get)
 BEE_ENV_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_ENV_PREFIX)
-BEE_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BEE_VERSION)
 BEE_IMAGE_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_IMAGE_PREFIX)
 DOCKER_IMAGES=$(docker image ls -qaf reference="$BEE_IMAGE_PREFIX/$BEE_ENV_PREFIX*:$BEE_VERSION")
 for DOCKER_IMAGE in $DOCKER_IMAGES
