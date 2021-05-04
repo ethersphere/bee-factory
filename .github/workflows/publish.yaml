@@ -44,7 +44,7 @@ jobs:
         run: |
           npm run build:env
       - name: Publish if it was clicked manually
-        if: "${{ github.event.inputs.buildImage }}" == 'true' && success()
+        if: ${{ github.event.inputs.buildImage }} == 'true' && success()
         run: |
           COMMIT_VERSION_TAG="${{ github.event.inputs.commitVersionTag }}"
           BEE_VERSION="${{ github.event.inputs.beeVersion }}"
