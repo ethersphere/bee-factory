@@ -1,0 +1,43 @@
+on:
+  workflow_dispatch:
+    inputs:
+      buildImage:
+        description: 'Build Docker Image according to the environment'
+        default: 'false'
+  push:
+    branches:
+      - 'master'
+  pull_request:
+    branches:
+      - '**'
+
+env:
+  BEE_IMAGE_PREFIX: 'docker.pkg.github.com/ethersphere/bee-factory'
+
+jobs:
+  bee-images:
+    name: Build and publish images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+          registry-url: 'https://registry.npmjs.org'
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: Auth to Github Package Docker Registry
+        if: (github.ref == 'refs/heads/master' || ${{ github.event.inputs.buildImage }} == 'true') && success()
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login https://docker.pkg.github.com -u ${GITHUB_ACTOR} --password-stdin
+      - name: Install npm deps
+        if: steps.cache-npm.outputs.cache-hit != 'true'
+        run: npm ci
+      - name: Build images
+        run: |
+          npm run build:env
+      - name: Publish if it was clicked manually
+        if: ${{ github.event.inputs.buildImage }} == 'true' && success()
+        run: |
+          npm run publish:env
