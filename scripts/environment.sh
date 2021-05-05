@@ -80,6 +80,9 @@ do
     esac
 done
 
+echo "Create Docker network..."
+"$MY_PATH/network.sh"
+
 # Start blockchain node
 echo "Start Blockchain node..."
 BLOCKCHAIN_CONTAINER=$(docker container ls -qaf name=$SWARM_BLOCKCHAIN_NAME)
