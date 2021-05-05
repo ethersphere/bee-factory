@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "description": "Setup Swarm Test Blockchain and arbitrary numbered Bee nodes",
   "scripts": {
-    "compile:chequebook": "truffle compile",
-    "migrate:chequebook": "truffle migrate",
+    "compile:contracts": "truffle compile",
+    "migrate:contracts": "truffle migrate",
     "supply": "truffle exec src/supply.js",
     "build:env": "./scripts/build-environment.sh",
     "publish:env": "./scripts/publish-environment.sh",

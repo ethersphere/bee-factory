@@ -36,7 +36,7 @@ $ ./scripts/blockchain.sh
 After that, it's possible to deploy Swarm smart contracts
 
 ```sh
-$ npm run migrate:chequebook
+$ npm run migrate:contracts
 ```
 
 Before you start the Bee nodes with the deployed Swap Factory, you have to fund your overlay addresses of your Bee nodes for the successful start.
