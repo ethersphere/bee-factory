@@ -20,6 +20,7 @@ MY_PATH=$( cd "$MY_PATH" && pwd )
 BEE_DIRS=$(ls -d "$MY_PATH"/bee-data-dirs/*/)
 BEE_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BEE_VERSION)
 BEE_IMAGE_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_IMAGE_PREFIX)
+OFFICIAL_BEE_IMAGE="ethersphere/bee:$BEE_VERSION"
 
 # Make sure we the user has permission all the files
 echo "Build Bee Docker images..."
@@ -33,8 +34,9 @@ dockerfile "$MY_PATH/bee-data-dirs/Dockerfile" "$BEE_VERSION"
 # The image will be built with the tag that is the bee version string
 COMMIT_VERSION_TAG="$("$MY_PATH/utils/env-variable-value.sh" COMMIT_VERSION_TAG)"
 if [ "$COMMIT_VERSION_TAG" == "true" ] ; then
+  docker pull $OFFICIAL_BEE_IMAGE
   # somehow the version command's output goes to the stderr
-  BEE_VERSION=$(docker run --rm ethersphere/bee:$BEE_VERSION version 2>&1)
+  BEE_VERSION=$(docker run --rm $OFFICIAL_BEE_IMAGE version 2>&1)
   "$MY_PATH/utils/build-image-tag.sh" set "$BEE_VERSION"
 fi
 
