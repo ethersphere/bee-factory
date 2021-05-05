@@ -56,6 +56,12 @@ log_queen() {
     docker logs --tail 25 -f "$QUEEN_CONTAINER_NAME"
 }
 
+count_connected_peers() {
+    COUNT=$( curl -s http://localhost:1635/peers | python -c 'import json,sys; obj=json.load(sys.stdin); print len(obj["peers"]);' )
+    
+    echo "$COUNT"
+}
+
 MY_PATH=$(dirname "$0")              # relative
 MY_PATH=$( cd "$MY_PATH" && pwd )  # absolutized and normalized
 # Check used system variable set
@@ -220,6 +226,14 @@ for i in $(seq 1 1 "$WORKERS"); do
   else
         docker start "$WORKER_CONTAINER_IN_DOCKER"
   fi
+done
+
+echo "Check whether the queen node has been connected to every worker..."
+while : ; do
+    COUNT=$(count_connected_peers)
+    [[ $COUNT < $WORKERS ]] || break
+    echo "Only $COUNT peers have been connected to the Queen Bee node yet. Waiting until $WORKERS"
+    sleep 2
 done
 
 # log Bee Queen
