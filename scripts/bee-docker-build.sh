@@ -36,7 +36,7 @@ COMMIT_VERSION_TAG="$("$MY_PATH/utils/env-variable-value.sh" COMMIT_VERSION_TAG)
 if [ "$COMMIT_VERSION_TAG" == "true" ] ; then
   docker pull $OFFICIAL_BEE_IMAGE
   # somehow the version command's output goes to the stderr
-  BEE_VERSION=$(docker run --rm $OFFICIAL_BEE_IMAGE version 2>&1)
+  BEE_VERSION=$(docker run --rm $OFFICIAL_BEE_IMAGE version)
   "$MY_PATH/utils/build-image-tag.sh" set "$BEE_VERSION"
 fi
 
