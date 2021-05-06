@@ -57,7 +57,7 @@ log_queen() {
 }
 
 count_connected_peers() {
-    COUNT=$( curl -s http://localhost:1635/peers | python -c 'import json,sys; obj=json.load(sys.stdin); print len(obj["peers"]);' )
+    COUNT=$( curl -s http://localhost:1635/peers | python -c 'import json,sys; obj=json.load(sys.stdin); print (len(obj["peers"]));' )
     
     echo "$COUNT"
 }
