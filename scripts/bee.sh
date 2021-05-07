@@ -25,30 +25,50 @@ USAGE
     exit 1
 }
 
-stop() {
+stop_containers() {
     echo "Stop Bee following containers:"
     docker container stop "$QUEEN_CONTAINER_NAME";
     WORKER_NAMES=$(docker container ls -f name="$WORKER_CONTAINER_NAME*" --format "{{.Names}}")
     for WORKER_NAME in $WORKER_NAMES; do
         docker container stop "$WORKER_NAME"
     done
+}
 
+stop() {
+    stop_containers
     trap - SIGINT
     exit 0;
+}
+
+queen_failure() {
+    docker logs "$QUEEN_CONTAINER_NAME"
+    stop_containers
+    echo "Timeout limit has been reached, exit from the process.."
+    exit 1
 }
 
 fetch_queen_underlay_addr() {
     if [[ -n "$QUEEN_UNDERLAY_ADDRESS" ]] ; then return; fi
 
-    while : ; do
-        QUEEN_UNDERLAY_ADDRESS=$(curl -s localhost:1635/addresses | python -mjson.tool 2>&1 | grep "/ip4/" | awk '!/127.0.0.1/' | sed 's/,$//' | xargs)
+    ELAPSED_TIME=0
+    WAITING_TIME=5
+    # Wait 2 mins for queen start
+    TIMEOUT=$((2*12*WAITING_TIME))
+    while (( TIMEOUT > ELAPSED_TIME )) ; do
+        QUEEN_UNDERLAY_ADDRESS=$(curl -s localhost:1635/addresses | python -mjson.tool | grep "/ip4/" | awk '!/127.0.0.1/' | sed 's/,$//' | xargs)
         if [[ -z "$QUEEN_UNDERLAY_ADDRESS" ]] ; then
             echo "Waiting for the Queen initialization..."
-            sleep 5
+            ELAPSED_TIME=$((ELAPSED_TIME+WAITING_TIME))
+            sleep $WAITING_TIME
         else
+            echo "Queen underlay address: $QUEEN_UNDERLAY_ADDRESS"
             break;
         fi
     done
+    
+    if (( TIMEOUT == ELAPSED_TIME )) ; then
+        queen_failure
+    fi
 }
 
 log_queen() {
@@ -57,7 +77,7 @@ log_queen() {
 }
 
 count_connected_peers() {
-    COUNT=$( curl -s http://localhost:1635/peers | python -c 'import json,sys; obj=json.load(sys.stdin); print (len(obj["peers"]));' )
+    COUNT=$( (curl -s http://localhost:1635/peers | python -c 'import json,sys; obj=json.load(sys.stdin); print (len(obj["peers"]));') || echo 0 )
     
     echo "$COUNT"
 }
@@ -229,12 +249,20 @@ for i in $(seq 1 1 "$WORKERS"); do
 done
 
 echo "Check whether the queen node has been connected to every worker..."
-while : ; do
+ELAPSED_TIME=0
+WAITING_TIME=2
+# Wait 2 mins for queen start
+TIMEOUT=$((2*30*WAITING_TIME))
+while (( TIMEOUT > ELAPSED_TIME )) ; do
     COUNT=$(count_connected_peers)
     [[ $COUNT < $WORKERS ]] || break
     echo "Only $COUNT peers have been connected to the Queen Bee node yet. Waiting until $WORKERS"
-    sleep 2
+    ELAPSED_TIME=$((ELAPSED_TIME+WAITING_TIME))
+    sleep $WAITING_TIME
 done
+if (( TIMEOUT == ELAPSED_TIME )) ; then
+    queen_failure
+fi
 
 # log Bee Queen
 if $LOG ; then
