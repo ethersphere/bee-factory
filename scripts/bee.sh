@@ -165,8 +165,10 @@ done
 
 BEE_IMAGE="$BEE_BASE_IMAGE:$BEE_VERSION"
 
+EXTRA_DOCKER_PARAMS="-v /dev/urandom:/dev/random"
+
 if $EPHEMERAL ; then
-    EXTRA_DOCKER_PARAMS="--rm"
+    EXTRA_DOCKER_PARAMS="$EXTRA_DOCKER_PARAMS --rm"
 fi
 
 # Start Bee Queen
