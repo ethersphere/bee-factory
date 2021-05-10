@@ -8,10 +8,13 @@
     "supply": "truffle exec src/supply.js",
     "build:env": "./scripts/build-environment.sh",
     "publish:env": "./scripts/publish-environment.sh",
-    "run:env": "./scripts/environment.sh"
+    "run:env": "./scripts/environment.sh",
+    "gen:traffic": "node ./scripts/gen-traffic.js" 
   },
   "dependencies": {
+    "@ethersphere/bee-js": "^0.8.1",
     "@openzeppelin/contracts": "^3.1.0",
+    "axios": "^0.20.0",
     "truffle": "^5.3.1"
   },
   "keywords": [
