@@ -260,7 +260,7 @@ while (( TIMEOUT > ELAPSED_TIME )) ; do
     ELAPSED_TIME=$((ELAPSED_TIME+WAITING_TIME))
     sleep $WAITING_TIME
 done
-if (( TIMEOUT == ELAPSED_TIME )) ; then
+if (( ELAPSED_TIME >= TIMEOUT )) ; then
     queen_failure
 fi
 
