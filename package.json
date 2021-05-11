@@ -9,7 +9,7 @@
     "build:env": "./scripts/build-environment.sh",
     "publish:env": "./scripts/publish-environment.sh",
     "run:env": "./scripts/environment.sh",
-    "gen:traffic": "node ./scripts/gen-traffic.js" 
+    "gen:traffic": "node ./scripts/gen-traffic.js"
   },
   "dependencies": {
     "@ethersphere/bee-js": "^0.8.1",
