@@ -62,7 +62,7 @@ async function checkEndpointExist(url) {
  * bee.sh compatible. Those ports will be checked that the `bee.sh` could bind.
  * @param host Host that has open port to the Bee API. Default: 'localhost'
  * @param secure whether the connection is HTTPS. Default: false
- * @param beeShPorts the traffic generation will try to
+ * @param beeShPorts the traffic generation will try to go through all possible Bee node binding on the host (bee.sh port binding)
  * @param port Bee API Port number of the Bee node. Default 1633 
  */ 
 async function genTrafficOnOpenPorts(host = 'localhost', secure = false, beeShPorts = false, port = 1633) {
