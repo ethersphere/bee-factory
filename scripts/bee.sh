@@ -251,7 +251,6 @@ done
 echo "Check whether the queen node has been connected to every worker..."
 ELAPSED_TIME=0
 WAITING_TIME=2
-# Wait 2 mins for queen start
 TIMEOUT=$((2*30*WAITING_TIME))
 while (( TIMEOUT > ELAPSED_TIME )) ; do
     COUNT=$(count_connected_peers)
