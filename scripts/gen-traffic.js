@@ -62,14 +62,14 @@ async function checkEndpointExist(url) {
  * bee.sh compatible. Those ports will be checked that the `bee.sh` could bind.
  * @param host Host that has open port to the Bee API. Default: 'localhost'
  * @param secure whether the connection is HTTPS. Default: false
- * @param beeShPorts the traffic generation will try to 
+ * @param beeShPorts the traffic generation will try to
+ * @param port Bee API Port number of the Bee node. Default 1633 
  */ 
-async function genTrafficOnOpenPorts(host = 'localhost', secure = false, beeShPorts = true) {
-  const protocol = `http${secure ? 's' : ''}` 
-  let port = 1633
+async function genTrafficOnOpenPorts(host = 'localhost', secure = false, beeShPorts = false, port = 1633) {
+  const protocol = `http${secure ? 's' : ''}`
   let url = `${protocol}://${host}:${port}`
+  console.log(`Generate Swarm Chunk traffic on ${url}...`)
   while(await checkEndpointExist(url)) {
-    console.log(`Generate Swarm Chunk traffic on ${url}...`)
     await trafficGen(url, new Date().getTime())
     if(!beeShPorts) break
     //increment port number for the next loop
@@ -78,4 +78,23 @@ async function genTrafficOnOpenPorts(host = 'localhost', secure = false, beeShPo
   }
 }
 
-genTrafficOnOpenPorts()
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function genTrafficLoop(host = 'localhost', secure = false, beeShPorts = false,  port = 1633) {
+  while(true) {
+    const sleepMs = 500
+
+    genTrafficOnOpenPorts(host, secure, beeShPorts, port)
+  
+    await sleep(sleepMs)
+  }
+}
+
+const host = process.argv[2] || 'localhost'
+const secure = process.argv[3] === 'true' || false
+const beeShPorts = process.argv[4] === 'true' || false
+const port = Number(process.argv[5]) || 1633
+
+genTrafficLoop(host, secure, beeShPorts, port)
