@@ -21,6 +21,7 @@ PARAMETERS:
     --own-image                 If passed, the used Docker image names will be identical as the name of the workers.
     --version=x.y.z             used version of Bee client.
     --detach                    It will not log the output of Queen node at the end of the process.
+    --payment-tolerance         excess debt above payment threshold in BZZ where you disconnect from your peer (without decimals, default: 50000000000000)
 USAGE
     exit 1
 }
@@ -86,6 +87,7 @@ PORT_MAPS=2
 SWAP=true
 SWAP_FACTORY_ADDRESS="0x5b1869D9A4C187F2EAa108f3062412ecf0526b24"
 INIT_ROOT_DATA_DIR="$MY_PATH/bee-data-dirs"
+PAYMENT_TOLERANCE="100000000000000000"
 
 # Decide script action
 case "$1" in
@@ -123,6 +125,10 @@ do
         ;;
         --port-maps=*)
         PORT_MAPS="${1#*=}"
+        shift 1
+        ;;
+        --payment-tolerance=*)
+        PAYMENT_TOLERANCE="${1#*=}"
         shift 1
         ;;
         --own-image)
@@ -177,6 +183,7 @@ if [ -z "$QUEEN_CONTAINER_IN_DOCKER" ] || $EPHEMERAL ; then
         --swap-enable=$SWAP \
         --swap-endpoint="http://$SWARM_BLOCKCHAIN_NAME:9545" \
         --swap-factory-address=$SWAP_FACTORY_ADDRESS \
+        --payment-tolerance="$PAYMENT_TOLERANCE" \
         --welcome-message="You have found the queen of the beehive..." \
         --cors-allowed-origins="*"
 else
@@ -221,6 +228,7 @@ for i in $(seq 1 1 "$WORKERS"); do
           --swap-enable=$SWAP \
           --swap-endpoint="http://$SWARM_BLOCKCHAIN_NAME:9545" \
           --swap-factory-address=$SWAP_FACTORY_ADDRESS \
+          --payment-tolerance="$PAYMENT_TOLERANCE" \
           --welcome-message="I'm just Bee worker ${i} in the beehive." \
           --cors-allowed-origins="*"
   else
