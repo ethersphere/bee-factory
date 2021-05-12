@@ -30,7 +30,7 @@ function randomByteArray(length, seed = 500) {
   return buf
 }
 
-async function trafficGen(host = 'http://localhost:1633', seed = 500, bytes = 17000) {
+async function trafficGen(host = 'http://localhost:1633', seed = 500, bytes = 1024 * 4 * 400) {
   const randomBytes = randomByteArray(bytes, seed)
   const bee = new Bee(host)
   const ref = await bee.uploadData(randomBytes)
