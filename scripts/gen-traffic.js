@@ -40,41 +40,14 @@ async function trafficGen(host = 'http://localhost:1633', seed = 500, bytes = 10
 }
 
 /**
- * Ping the given address whether it exists or not
+ * Generate traffic on Bee node(s)
  * 
- * It checks basically with a simple GET request
- * the given EP returns 200 status code.
- * @param url Designed accept Bee API URL 
- */
-async function checkEndpointExist(url) {
-  try {
-    res = await axios.get(url)
-
-    return res.status === 200
-  } catch(e) {
-    return false
-  }
-}
-
-/**
- * Generate traffic on Bee node through the given host
- * 
- * bee.sh compatible. Those ports will be checked that the `bee.sh` could bind.
- * @param host Host that has open port to the Bee API. Default: 'localhost'
- * @param secure whether the connection is HTTPS. Default: false
- * @param beeShPorts the traffic generation will try to go through all possible Bee node binding on the host (bee.sh port binding)
- * @param port Bee API Port number of the Bee node. Default 1633 
+ * @param beeApiUrls Bee API URLs where the random generated data will be sent to.
  */ 
-async function genTrafficOnOpenPorts(host = 'localhost', secure = false, beeShPorts = false, port = 1633) {
-  const protocol = `http${secure ? 's' : ''}`
-  let url = `${protocol}://${host}:${port}`
-  console.log(`Generate Swarm Chunk traffic on ${url}...`)
-  while(await checkEndpointExist(url)) {
+async function genTrafficOnOpenPorts(beeApiUrls) {
+  for(const url of beeApiUrls) {
+    console.log(`Generate Swarm Chunk traffic on ${url}...`)
     await trafficGen(url, new Date().getTime())
-    if(!beeShPorts) break
-    //increment port number for the next loop
-    port += 10000
-    url = `${protocol}://${host}:${port}`
   }
 }
 
@@ -82,19 +55,16 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function genTrafficLoop(host = 'localhost', secure = false, beeShPorts = false,  port = 1633) {
+async function genTrafficLoop(hosts) {
   while(true) {
     const sleepMs = 500
 
-    genTrafficOnOpenPorts(host, secure, beeShPorts, port)
+    genTrafficOnOpenPorts(hosts)
   
     await sleep(sleepMs)
   }
 }
 
-const host = process.argv[2] || 'localhost'
-const secure = process.argv[3] === 'true' || false
-const beeShPorts = process.argv[4] === 'true' || false
-const port = Number(process.argv[5]) || 1633
-
-genTrafficLoop(host, secure, beeShPorts, port)
+const inputArray = process.argv.slice(2)
+const hosts = inputArray.length > 0 ? inputArray : [ 'http://localhost:1633' ]
+genTrafficLoop(hosts)
