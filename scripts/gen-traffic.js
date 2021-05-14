@@ -35,8 +35,6 @@ async function trafficGen(host = 'http://localhost:1633', seed = 500, bytes = 10
   const bee = new Bee(host)
   const ref = await bee.uploadData(randomBytes)
   console.log(`Generated ${bytes} bytes traffic, the random data's root reference: ${ref}`)
-
-  axios.get(host)
 }
 
 /**
@@ -57,7 +55,7 @@ function sleep(ms) {
 
 async function genTrafficLoop(hosts) {
   while(true) {
-    const sleepMs = 500
+    const sleepMs = 1000
 
     genTrafficOnOpenPorts(hosts)
   
