@@ -1,6 +1,8 @@
 const axios = require('axios').default;
 const Bee = require('@ethersphere/bee-js').Bee;
 
+const SLEEP_BETWEEN_UPLOADS_MS = 1000
+
 /**
  * Lehmer random number generator with seed (minstd_rand in C++11)
  * !!! Very fast but not well distributed pseudo-random function !!!
@@ -43,10 +45,11 @@ async function trafficGen(host = 'http://localhost:1633', seed = 500, bytes = 10
  * @param beeApiUrls Bee API URLs where the random generated data will be sent to.
  */ 
 async function genTrafficOnOpenPorts(beeApiUrls) {
-  for(const url of beeApiUrls) {
+  const promises = beeApiUrls.map((url) => {
     console.log(`Generate Swarm Chunk traffic on ${url}...`)
-    await trafficGen(url, new Date().getTime())
-  }
+    return trafficGen(url, new Date().getTime())
+  })
+  await Promise.all(promises)
 }
 
 function sleep(ms) {
@@ -55,11 +58,9 @@ function sleep(ms) {
 
 async function genTrafficLoop(hosts) {
   while(true) {
-    const sleepMs = 1000
-
-    genTrafficOnOpenPorts(hosts)
+    await genTrafficOnOpenPorts(hosts)
   
-    await sleep(sleepMs)
+    await sleep(SLEEP_BETWEEN_UPLOADS_MS)
   }
 }
 
