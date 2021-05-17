@@ -10,6 +10,7 @@ PARAMETERS:
     --ephemeral                 create ephemeral container for bee-client. Data won't be persisted.
     --workers=number            all Bee nodes in the test environment. Default is 4.
     --detach                    It will not log the output of Queen node at the end of the process.
+    --payment-treshold         excess debt above payment threshold in BZZ where you disconnect from your peer (without decimals, default: 2000000000)
 USAGE
     exit 1
 }
@@ -38,6 +39,7 @@ WORKERS=4
 LOG=true
 SWARM_BLOCKCHAIN_NAME="$BEE_ENV_PREFIX-blockchain"
 SWARM_NETWORK="$BEE_ENV_PREFIX-network"
+PAYMENT_THRESHOLD="2000000000"
 
 # Decide script action
 case "$1" in
@@ -64,6 +66,10 @@ do
         ;;
         --workers=*)
         WORKERS=${1#*=}
+        shift 1
+        ;;
+        --payment-treshold=*)
+        PAYMENT_THRESHOLD=${1#*=}
         shift 1
         ;;
         --detach)
@@ -100,7 +106,7 @@ fi
 sleep 5
 
 # Build up bee.sh parameters
-BEE_SH_ARGUMENTS="--workers=$WORKERS --own-image"
+BEE_SH_ARGUMENTS="--workers=$WORKERS --own-image --payment-treshold=$PAYMENT_THRESHOLD"
 if $EPHEMERAL ; then
     BEE_SH_ARGUMENTS="$BEE_SH_ARGUMENTS --ephemeral"
 fi

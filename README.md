@@ -78,3 +78,29 @@ start the Bee cluster
 ```sh
 ./scripts/environment.sh start
 ```
+
+## Utilities
+
+It is possible to generate random traffic in your cluster:
+
+```sh
+$ npm run gen:traffic 
+```
+
+The script is in an infinite loop, so if you want to stop the generation you have to terminate it manually in your terminal by pressing `Ctrl^C`.
+
+If you don't specify any parameters it will produce 400 chunks/0.5 sec that the script tries to upload on the `http://localhost:1633` - that is the binded port of the queen node if you orchestrated the environment with the `envrionment.sh`.
+
+The following way you can pass parameter
+
+1. BEE_API_URL - Host that has reachable port to the Bee API. [Array<string>,Default:['http://localhost:1633']]
+
+```sh
+$ npm run gen:traffic -- <BEE_API_URL> <BEE_API_URL> <BEE_API_URL> (...)
+```
+
+e.g.
+
+```sh
+$ npm run gen:traffic -- http://localhost:1633 http://localhost:11633
+```
