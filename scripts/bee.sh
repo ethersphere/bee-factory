@@ -16,7 +16,7 @@ PARAMETERS:
                                 1. 1633:1635
                                 2. 11633:11635
                                 3. 21633:21635 (...)
-                                number represents the nodes number to map from. Default is 4.
+                                number represents the nodes number to map from. Default is 2.
     --password=string           password for Bee client(s).
     --own-image                 If passed, the used Docker image names will be identical as the name of the workers.
     --version=x.y.z             used version of Bee client.
