@@ -34,21 +34,21 @@ function randomByteArray(length, seed = 500) {
   return buf
 }
 
-async function trafficGen(bee, seed = 500, bytes = 1024 * 4 * 400) {
+async function trafficGen(bee, postageBatchId, seed = 500, bytes = 1024 * 4 * 400) {
   const randomBytes = randomByteArray(bytes, seed)
-  const ref = await bee.uploadData(randomBytes)
+  const ref = await bee.uploadData(postageBatchId, randomBytes)
   console.log(`Generated ${bytes} bytes traffic, the random data's root reference: ${ref}`)
 }
 
 /**
  * Generate traffic on Bee node(s)
  * 
- * @param bees Bee instances where the random generated data will be sent to.
+ * @param bees Array of Bee instances and postage batches where the random generated data will be sent to.
  */ 
 async function genTrafficOnOpenPorts(bees) {
-  const promises = bees.map((bee) => {
+  const promises = bees.map(({bee, postageBatchId}) => {
     console.log(`Generate Swarm Chunk traffic on ${bee.url}...`)
-    return trafficGen(bee, new Date().getTime())
+    return trafficGen(bee, postageBatchId, new Date().getTime())
   })
   await Promise.all(promises)
 }
@@ -62,10 +62,10 @@ async function genTrafficLoop(hosts) {
     const bee = new Bee(host)
 
     console.log(`Generating postage stamps on ${host}...`)
-    const postageBatchId = await bee.createStampBatch(POSTAGE_STAMPS_AMOUNT, POSTAGE_STAMPS_DEPTH)
+    const postageBatchId = await bee.createPostageBatch(POSTAGE_STAMPS_AMOUNT, POSTAGE_STAMPS_DEPTH)
     console.log(`Generated ${postageBatchId} postage stamp on ${host}...`)
 
-    return new Bee(host, {postageBatchId})
+    return {bee, postageBatchId}
   })
 
   const bees = await Promise.all(promisses)
