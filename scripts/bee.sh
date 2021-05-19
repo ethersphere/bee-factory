@@ -21,7 +21,7 @@ PARAMETERS:
     --own-image                 If passed, the used Docker image names will be identical as the name of the workers.
     --version=x.y.z             used version of Bee client.
     --detach                    It will not log the output of Queen node at the end of the process.
-    --payment-threshold         The threshold in BZZ where you expect to get paid from your peers. (without decimals, default: 10000000000000)
+    --payment-threshold         The threshold in BZZ where you expect to get paid from your peers. (without decimals, default: 310000000000)
 USAGE
     exit 1
 }
@@ -109,7 +109,7 @@ SWAP_FACTORY_ADDRESS="0x5b1869D9A4C187F2EAa108f3062412ecf0526b24"
 POSTAGE_STAMP_ADDRESS="0xCfEB869F69431e42cdB54A4F4f105C19C080A601"
 PRICE_ORACLE_ADDRESS="0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B"
 INIT_ROOT_DATA_DIR="$MY_PATH/bee-data-dirs"
-PAYMENT_THRESHOLD="10000000000000"
+PAYMENT_THRESHOLD="310000000000"
 
 # Decide script action
 case "$1" in
