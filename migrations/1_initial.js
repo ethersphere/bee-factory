@@ -23,14 +23,6 @@ function getPostageStampBin(tokenAddress) {
   return bin + tokenAddress
 }
 
-function getPriceOracleBin(postageStampAddress) {
-  const binPath = Path.join(__dirname, '..', 'contracts', 'PriceOracle.bytecode')
-  const bin = FS.readFileSync(binPath, 'utf8').toString()
-  postageStampAddress = prefixedAddressParamToByteCode(postageStampAddress)
-  //add postageStampAddress for param to the end of the bytecode
-  return bin + postageStampAddress
-}
-
 /** Returns back contract hash */
 async function createContract(contractName, data, creatorAccount) {
   const transaction = await web3.eth.sendTransaction({
@@ -59,14 +51,9 @@ async function createPostageStampContract(erc20ContractAddress, creatorAccount) 
   return createContract('PostageStamp', getPostageStampBin(erc20ContractAddress), creatorAccount)
 }
 
-async function createPriceOracleContract(postageStampContractAddress, creatorAccount) {
-  return createContract('PriceOracle', getPriceOracleBin(postageStampContractAddress), creatorAccount)
-}
-
 module.exports = function (deployer, network, accounts) {
   deployer.deploy(ERC20PresetMinterPauser, "Swarm Token", "BZZ").then(async () => {
     await createSimpleSwapFactoryContract(ERC20PresetMinterPauser.address, accounts[0])
-    const postageStampAddress = await createPostageStampContract(ERC20PresetMinterPauser.address, accounts[0])
-    await createPriceOracleContract(postageStampAddress, accounts[0])
+    await createPostageStampContract(ERC20PresetMinterPauser.address, accounts[0])
   });
 };
