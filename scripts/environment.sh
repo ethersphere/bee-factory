@@ -103,7 +103,7 @@ echo "Create Docker network..."
 echo "Start Blockchain node..."
 BLOCKCHAIN_CONTAINER=$(docker container ls -qaf name=$SWARM_BLOCKCHAIN_NAME)
 if [ -z "$BLOCKCHAIN_CONTAINER" ] ; then
-    BLOCKCHAIN_ARGUMENTS="--name $SWARM_BLOCKCHAIN_NAME --network $SWARM_NETWORK -d"
+    BLOCKCHAIN_ARGUMENTS="--name $SWARM_BLOCKCHAIN_NAME --network $SWARM_NETWORK -p 127.0.0.1:9545:9545 -d"
     if $EPHEMERAL ; then
         BLOCKCHAIN_ARGUMENTS="$BLOCKCHAIN_ARGUMENTS --rm"
     fi
