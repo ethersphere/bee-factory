@@ -17,6 +17,7 @@ if [ -z "$CONTAINER_IN_DOCKER" ]; then
     trufflesuite/ganache-cli ganache-cli \
       -d -i 4020 -h 0.0.0.0 -p 9545 \
       -b 1 \
+      --chainId 4020 \
       --db swarm-testchain --gasLimit 6721975
 else
   docker start $NAME

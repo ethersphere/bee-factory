@@ -16,12 +16,12 @@ PARAMETERS:
                                 1. 1633:1635
                                 2. 11633:11635
                                 3. 21633:21635 (...)
-                                number represents the nodes number to map from. Default is 4.
+                                number represents the nodes number to map from. Default is 2.
     --password=string           password for Bee client(s).
     --own-image                 If passed, the used Docker image names will be identical as the name of the workers.
     --version=x.y.z             used version of Bee client.
     --detach                    It will not log the output of Queen node at the end of the process.
-    --payment-threshold         The threshold in BZZ where you expect to get paid from your peers. (without decimals, default: 10000000000000)
+    --payment-threshold         The threshold in BZZ where you expect to get paid from your peers. (without decimals, default: 310000000000)
 USAGE
     exit 1
 }
@@ -106,8 +106,9 @@ QUEEN_BOOTNODE=""
 PORT_MAPS=2
 SWAP=true
 SWAP_FACTORY_ADDRESS="0x5b1869D9A4C187F2EAa108f3062412ecf0526b24"
+POSTAGE_STAMP_ADDRESS="0xCfEB869F69431e42cdB54A4F4f105C19C080A601"
 INIT_ROOT_DATA_DIR="$MY_PATH/bee-data-dirs"
-PAYMENT_THRESHOLD="10000000000000"
+PAYMENT_THRESHOLD="310000000000"
 
 # Decide script action
 case "$1" in
@@ -204,6 +205,9 @@ if [ -z "$QUEEN_CONTAINER_IN_DOCKER" ] || $EPHEMERAL ; then
         --swap-endpoint="http://$SWARM_BLOCKCHAIN_NAME:9545" \
         --swap-factory-address=$SWAP_FACTORY_ADDRESS \
         --payment-threshold="$PAYMENT_THRESHOLD" \
+        --postage-stamp-address=$POSTAGE_STAMP_ADDRESS \
+        --network-id 4020 \
+        --full-node=true \
         --welcome-message="You have found the queen of the beehive..." \
         --cors-allowed-origins="*"
 else
@@ -249,6 +253,9 @@ for i in $(seq 1 1 "$WORKERS"); do
           --swap-endpoint="http://$SWARM_BLOCKCHAIN_NAME:9545" \
           --swap-factory-address=$SWAP_FACTORY_ADDRESS \
           --payment-threshold="$PAYMENT_THRESHOLD" \
+          --postage-stamp-address=$POSTAGE_STAMP_ADDRESS \
+          --network-id 4020 \
+          --full-node=true \
           --welcome-message="I'm just Bee worker ${i} in the beehive." \
           --cors-allowed-origins="*"
   else

@@ -1,7 +1,9 @@
 const axios = require('axios').default;
 const Bee = require('@ethersphere/bee-js').Bee;
 
-const SLEEP_BETWEEN_UPLOADS_MS = 1000
+const SLEEP_BETWEEN_UPLOADS_MS = 100
+const POSTAGE_STAMPS_AMOUNT = BigInt(10000)
+const POSTAGE_STAMPS_DEPTH = 20
 
 /**
  * Lehmer random number generator with seed (minstd_rand in C++11)
@@ -32,22 +34,21 @@ function randomByteArray(length, seed = 500) {
   return buf
 }
 
-async function trafficGen(host = 'http://localhost:1633', seed = 500, bytes = 1024 * 4 * 400) {
+async function trafficGen(bee, postageBatchId, seed = 500, bytes = 1024 * 4 * 400) {
   const randomBytes = randomByteArray(bytes, seed)
-  const bee = new Bee(host)
-  const ref = await bee.uploadData(randomBytes)
+  const ref = await bee.uploadData(postageBatchId, randomBytes)
   console.log(`Generated ${bytes} bytes traffic, the random data's root reference: ${ref}`)
 }
 
 /**
  * Generate traffic on Bee node(s)
  * 
- * @param beeApiUrls Bee API URLs where the random generated data will be sent to.
+ * @param bees Array of Bee instances and postage batches where the random generated data will be sent to.
  */ 
-async function genTrafficOnOpenPorts(beeApiUrls) {
-  const promises = beeApiUrls.map((url) => {
-    console.log(`Generate Swarm Chunk traffic on ${url}...`)
-    return trafficGen(url, new Date().getTime())
+async function genTrafficOnOpenPorts(bees) {
+  const promises = bees.map(({bee, postageBatchId}) => {
+    console.log(`Generate Swarm Chunk traffic on ${bee.url}...`)
+    return trafficGen(bee, postageBatchId, new Date().getTime())
   })
   await Promise.all(promises)
 }
@@ -57,8 +58,20 @@ function sleep(ms) {
 }
 
 async function genTrafficLoop(hosts) {
+  const promisses = hosts.map(async (host) => {
+    const bee = new Bee(host)
+
+    console.log(`Generating postage stamps on ${host}...`)
+    const postageBatchId = await bee.createPostageBatch(POSTAGE_STAMPS_AMOUNT, POSTAGE_STAMPS_DEPTH)
+    console.log(`Generated ${postageBatchId} postage stamp on ${host}...`)
+
+    return {bee, postageBatchId}
+  })
+
+  const bees = await Promise.all(promisses)
+
   while(true) {
-    await genTrafficOnOpenPorts(hosts)
+    await genTrafficOnOpenPorts(bees)
   
     await sleep(SLEEP_BETWEEN_UPLOADS_MS)
   }
