@@ -93,14 +93,17 @@ If you don't specify any parameters it will produce 400 chunks/0.5 sec that the 
 
 The following way you can pass parameter
 
-1. BEE_API_URL - Host that has reachable port to the Bee API. [Array<string>,Default:['http://localhost:1633']]
+1. MIN_CHEQUE_NUMBER - Minimum required cheques for Bee under the given BEE_DEBUG_API_URL. If -1 then it does not check for cheques [Number,Default:-1]
+2. BEE_API_URL;BEE_DEBUG_API_URL - Bee API and Debug API URL separated by semicolon. The random data will sent to the Bee API URL, and the generated cheques will be checked on the Bee Debug URL. The two URLs should belong to different Bee clients as the generated data will propagate from that client to the network. [string,Default:'http://localhost:1633;http://localhost:11635']
 
 ```sh
-$ npm run gen:traffic -- <BEE_API_URL> <BEE_API_URL> <BEE_API_URL> (...)
+$ npm run gen:traffic -- <MIN_CHEQUE_NUMBER> <BEE_API_URL;BEE_DEBUG_API_URL> <BEE_API_URL;BEE_DEBUG_API_URL> (...)
 ```
 
 e.g.
 
 ```sh
-$ npm run gen:traffic -- http://localhost:1633 http://localhost:11633
+$ npm run gen:traffic -- 2 http://localhost:1633;http://localhost:11635
 ```
+
+With the example above, random data will be generated until _minimum_ two cheques will generated on Bee client that serves debug endpoint `http://localhost:11635`
