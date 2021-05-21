@@ -68,7 +68,7 @@ function sleep(ms) {
  * @param {number} minCheques 
  */
 async function genTrafficLoop(hosts, minCheques) {
-  const promisses = hosts.map(async (host) => {
+  const promises = hosts.map(async (host) => {
     const [ beeApiUrl,  beeDebugApiUrl ] = host.split(';')
     const bee = new Bee(beeApiUrl)
     const beeDebug = new BeeDebug(beeDebugApiUrl)
@@ -80,7 +80,7 @@ async function genTrafficLoop(hosts, minCheques) {
     return {bee, beeDebug, postageBatchId}
   })
 
-  const bees = await Promise.all(promisses)
+  const bees = await Promise.all(promises)
 
   while(true) {
     await genTrafficOnOpenPorts(bees)
