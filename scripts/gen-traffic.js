@@ -69,9 +69,7 @@ function sleep(ms) {
  */
 async function genTrafficLoop(hosts, minCheques) {
   const promisses = hosts.map(async (host) => {
-    const beeUrls = host.split(';')
-    const beeApiUrl = beeUrls[0]
-    const beeDebugApiUrl = beeUrls[1]
+    const [ beeApiUrl,  beeDebugApiUrl ] = host.split(';')
     const bee = new Bee(beeApiUrl)
     const beeDebug = new BeeDebug(beeDebugApiUrl)
 
