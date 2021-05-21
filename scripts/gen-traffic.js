@@ -94,10 +94,7 @@ async function genTrafficLoop(hosts, minCheques) {
         const incomingCheques = lastcheques.filter(cheque => !!cheque.lastreceived)
 
         const uncashedCheques = []
-        const lastCashOutPromises = []
-        for(const incomingCheque of incomingCheques) {
-          lastCashOutPromises.push(beeDebug.getLastCashoutAction(incomingCheque.peer))
-        }
+        const lastCashOutPromises = incomingCheques.map(({ peer }) => beeDebug.getLastCashoutAction(peer))
         const lastCashOuts = await Promise.all(lastCashOutPromises)
         for(const [index, lastCashOut] of lastCashOuts.entries()) {
           if(lastCashOut.uncashedAmount > 0) {
