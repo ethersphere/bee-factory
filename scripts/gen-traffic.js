@@ -90,13 +90,18 @@ async function genTrafficLoop(hosts, minCheques) {
       for(const bee of bees) {
         const beeDebug = bee.beeDebug
         const { lastcheques } = await beeDebug.getLastCheques()
+        console.log('lastcheques', lastcheques)
         const incomingCheques = lastcheques.filter(cheque => !!cheque.lastreceived)
 
         const uncashedCheques = []
+        const lastCashOutPromises = []
         for(const incomingCheque of incomingCheques) {
-          const lastCashOut = await beeDebug.getLastCashoutAction(incomingCheque.peer)
+          lastCashOutPromises.push(beeDebug.getLastCashoutAction(incomingCheque.peer))
+        }
+        const lastCashOuts = await Promise.all(lastCashOutPromises)
+        for(const [index, lastCashOut] of lastCashOuts.entries()) {
           if(lastCashOut.uncashedAmount > 0) {
-            uncashedCheques.push(incomingCheque)
+            uncashedCheques.push(incomingCheques[index])
           }
         }
         
