@@ -79,6 +79,19 @@ start the Bee cluster
 ./scripts/environment.sh start
 ```
 
+### Pull images
+
+Bee Factory can build images for CIs, but it is also possible to pull image to your computer as well.
+
+For that you have to login to the Github docker registry with
+
+```sh
+docker login docker.pkg.github.com
+```
+
+it will ask for your _GitHub_ username and for the password. For the latter you can generate a [Personal Access Token](https://github.com/settings/tokens).
+The suggested permissions for the token are `read:org` and `read:packages`. 
+
 ## Utilities
 
 It is possible to generate random traffic in your cluster:
