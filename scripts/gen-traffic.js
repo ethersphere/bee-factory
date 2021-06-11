@@ -1,7 +1,7 @@
 const axios = require('axios').default;
 const { Bee, BeeDebug } = require('@ethersphere/bee-js');
 
-const SLEEP_BETWEEN_UPLOADS_MS = 100
+const SLEEP_BETWEEN_UPLOADS_MS = 500
 const POSTAGE_STAMPS_AMOUNT = BigInt(10000)
 const POSTAGE_STAMPS_DEPTH = 20
 
@@ -93,10 +93,11 @@ async function genTrafficLoop(hosts, minCheques) {
         const incomingCheques = lastcheques.filter(cheque => !!cheque.lastreceived)
 
         const uncashedCheques = []
-        for(const incomingCheque of incomingCheques) {
-          const lastCashOut = await beeDebug.getLastCashoutAction(incomingCheque.peer)
+        const lastCashOutPromises = incomingCheques.map(({ peer }) => beeDebug.getLastCashoutAction(peer))
+        const lastCashOuts = await Promise.all(lastCashOutPromises)
+        for(const [index, lastCashOut] of lastCashOuts.entries()) {
           if(lastCashOut.uncashedAmount > 0) {
-            uncashedCheques.push(incomingCheque)
+            uncashedCheques.push(incomingCheques[index])
           }
         }
         
