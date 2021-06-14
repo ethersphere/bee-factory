@@ -7,6 +7,10 @@ function prefixedAddressParamToByteCode(address) {
   return address.substring(2).toLowerCase().padStart(64, '0')
 }
 
+function intToByteCode(intParam) {
+  return Number(intParam).toString(16).padStart(64, '0')
+}
+
 function getSimpleSwapFactoryBin(tokenAddress) {
   const binPath = Path.join(__dirname, '..', 'contracts', 'SimpleSwapFactory.bytecode')
   const bin = FS.readFileSync(binPath, 'utf8').toString()
@@ -21,6 +25,15 @@ function getPostageStampBin(tokenAddress) {
   tokenAddress = prefixedAddressParamToByteCode(tokenAddress)
   //add tokenaddress for param to the end of the bytecode
   return bin + tokenAddress
+}
+
+function getPriceOracleBin(price, chequeValueDeduction) {
+  const binPath = Path.join(__dirname, '..', 'contracts', 'PriceOracle.bytecode')
+  const bin = FS.readFileSync(binPath, 'utf8').toString()
+  const priceAbi = intToByteCode(price)
+  const chequeValueAbi = intToByteCode(chequeValueDeduction)
+  //add tokenaddress for param to the end of the bytecode
+  return bin + priceAbi + chequeValueAbi
 }
 
 /** Returns back contract hash */
@@ -51,9 +64,20 @@ async function createPostageStampContract(erc20ContractAddress, creatorAccount) 
   return createContract('PostageStamp', getPostageStampBin(erc20ContractAddress), creatorAccount)
 }
 
+/**
+ * 
+ * @param {number} price current price in PLUR per accounting unit
+ * @param {number} chequeValueDeduction value deducted from first received cheque from a peer in PLUR
+ * @param {string} creatorAccount 
+ */
+async function createPriceOracleContract(price, chequeValueDeduction, creatorAccount) {
+  return createContract('PriceOracle', getPriceOracleBin(price, chequeValueDeduction), creatorAccount)
+}
+
 module.exports = function (deployer, network, accounts) {
   deployer.deploy(ERC20PresetMinterPauser, "Swarm Token", "BZZ").then(async () => {
     await createSimpleSwapFactoryContract(ERC20PresetMinterPauser.address, accounts[0])
     await createPostageStampContract(ERC20PresetMinterPauser.address, accounts[0])
+    await createPriceOracleContract(100000, 1, accounts[0])
   });
 };
