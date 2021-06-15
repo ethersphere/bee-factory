@@ -1,4 +1,6 @@
 const ERC20PresetMinterPauser = artifacts.require("ERC20PresetMinterPauser");
+const PriceOracle = artifacts.require('PriceOracle')
+const PostageStamp = artifacts.require('PostageStamp')
 const FS = require('fs')
 const Path = require('path')
 
@@ -77,7 +79,9 @@ async function createPriceOracleContract(price, chequeValueDeduction, creatorAcc
 module.exports = function (deployer, network, accounts) {
   deployer.deploy(ERC20PresetMinterPauser, "Swarm Token", "BZZ").then(async () => {
     await createSimpleSwapFactoryContract(ERC20PresetMinterPauser.address, accounts[0])
-    await createPostageStampContract(ERC20PresetMinterPauser.address, accounts[0])
-    await createPriceOracleContract(100000, 1, accounts[0])
+    await deployer.deploy(PostageStamp, ERC20PresetMinterPauser.address)
+    // await createPostageStampContract(ERC20PresetMinterPauser.address, accounts[0])
+    await deployer.deploy(PriceOracle, 100000, 1)
+    // await createPriceOracleContract(100000, 1, accounts[0])
   });
 };
