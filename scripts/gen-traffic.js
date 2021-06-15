@@ -73,7 +73,7 @@ async function genTrafficLoop(hosts, minCheques) {
     const bee = new Bee(beeApiUrl)
     const beeDebug = new BeeDebug(beeDebugApiUrl)
 
-    console.log(`Generating postage stamps on ${host}...`)
+    console.log(`Create postage stamp on ${beeApiUrl}...`)
     const postageBatchId = await bee.createPostageBatch(POSTAGE_STAMPS_AMOUNT, POSTAGE_STAMPS_DEPTH)
     console.log(`Generated ${postageBatchId} postage stamp on ${host}...`)
 
