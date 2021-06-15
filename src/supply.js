@@ -1,4 +1,5 @@
 const ERC20PresetMinterPauser = artifacts.require("ERC20PresetMinterPauser");
+const PostageStamp = artifacts.require('PostageStamp')
 const beeAddresses = require('../bee-overlay-addresses.json')
 
 function getRawTokenAmount(amount, decimals = 18) {
@@ -54,6 +55,31 @@ async function mintToken(recepientAddress, supplierAddress, tokenAddress, tokenA
   console.log('-'.repeat(process.stdout.columns))
 }
 
+/** Supply given address with the given Token amount */
+async function approveToken(recepientAddress, supplierAddress, tokenAddress, tokenAmount = "100") {
+  const instance = await ERC20PresetMinterPauser.at(tokenAddress)
+  const rawTokenAmount = getRawTokenAmount(tokenAmount)
+  const transaction = await instance.approve(
+    recepientAddress,
+    rawTokenAmount,
+    { 
+      from: supplierAddress,
+      gasLimit: 6721975,
+    }
+  )
+
+  if(!transaction.receipt.status) {
+    console.error('Approe Token Error', transaction)
+    throw new Error(`Error happened at approving token spending to address ${recepientAddress} from account ${supplierAddress}`)
+  }
+
+  console.log(`Approving token spending for address ${recepientAddress} with Token from account ${supplierAddress} was successful! \n`
+    + `\tAllowed Token Amount: ${tokenAmount}\n`
+    + `\tTransaction ID: ${transaction.tx}`,
+  )
+  console.log('-'.repeat(process.stdout.columns))
+}
+
 /** Supply ERC20 tokens to all configured Bee client overlay addresses */
 async function supplyTokenForBees(supplierAddress, erc20ContractAddress) {
   const txPromises = []
@@ -82,5 +108,10 @@ module.exports = (async function(callback) {
   const accounts = await web3.eth.getAccounts()
   await supplyTokenForBees(accounts[0], ERC20PresetMinterPauser.address)
   await supplyEtherForBees(accounts[0])
+  //mint BZZ for the main ganache account as well
+  await mintToken(accounts[0], accounts[0], ERC20PresetMinterPauser.address, 100000)
+  //approve BZZ spending for the postage stamp contract from main account so that the main account will be able to create postage stamps
+  await approveToken(PostageStamp.address, accounts[0], ERC20PresetMinterPauser.address, 100000) 
+  
   callback()
 });
