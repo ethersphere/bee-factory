@@ -1,4 +1,4 @@
-on:
+on: [![.github/workflows/publish.yaml](https://github.com/ethersphere/bee-factory/actions/workflows/publish.yaml/badge.svg)](https://github.com/ethersphere/bee-factory/actions/workflows/publish.yaml)
   workflow_dispatch:
     inputs:
       buildImage:
