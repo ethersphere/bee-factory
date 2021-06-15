@@ -9,11 +9,12 @@
     "build:env": "./scripts/build-environment.sh",
     "publish:env": "./scripts/publish-environment.sh",
     "run:env": "./scripts/environment.sh",
-    "gen:traffic": "node ./scripts/gen-traffic.js"
+    "gen:traffic": "node ./scripts/gen-traffic.js",
+    "create:stamp": "truffle exec src/stamp-create.js"
   },
   "dependencies": {
     "@ethersphere/bee-js": "0.10.0",
-    "@openzeppelin/contracts": "^3.1.0",
+    "@openzeppelin/contracts": "^4.1.0",
     "axios": "^0.20.0",
     "truffle": "^5.3.5"
   },
