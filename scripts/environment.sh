@@ -116,7 +116,7 @@ fi
 sleep 5
 
 # Build up bee.sh parameters
-BEE_SH_ARGUMENTS="--workers=$WORKERS --own-image --payment-treshold=$PAYMENT_THRESHOLD --port-maps=$PORT_MAPS
+BEE_SH_ARGUMENTS="--workers=$WORKERS --own-image --payment-treshold=$PAYMENT_THRESHOLD --port-maps=$PORT_MAPS"
 if $EPHEMERAL ; then
     BEE_SH_ARGUMENTS="$BEE_SH_ARGUMENTS --ephemeral"
 fi
