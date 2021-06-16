@@ -59,8 +59,8 @@ jobs:
         run: |
           if [ $BUILD_IMAGE == 'true' ] ; then
             echo "retrieve built BEE_VERSION value"
-            COMMIT_VERSION_TAG=true
-            BEE_VERSION=$( ./scripts/utils/build-image-tag.sh get )
+            export COMMIT_VERSION_TAG=true
+            export BEE_VERSION=$( ./scripts/utils/build-image-tag.sh get )
             echo "Retreived Bee version: $BEE_VERSION"
           fi
           npm run publish:env
