@@ -2,14 +2,17 @@ on:
   workflow_dispatch:
     inputs:
       buildImage:
-        description: 'Build Docker Image according to the environment'
+        description: 'Build and push Docker Image according to the environment'
         default: 'false'
       commitVersionTag:
         description: 'The image tag will be retrieved from the bee version command'
         default: 'false'
       beeVersion:
         description: 'The official bee image tag that the image will be built on. Default: last supported version'
-        default: '0.5.3'
+        default: 'latest'
+      beeVersionAsCommitHash:
+        description: 'The beeVersion parameter will be interpreted as a source code commit hash that the bee base image will be built on'
+        default: 'false'
   push:
     branches:
       - 'master'
@@ -42,9 +45,14 @@ jobs:
       - name: Install npm deps
         if: steps.cache-npm.outputs.cache-hit != 'true'
         run: npm ci
-      - name: Build images
+      - name: Build images using base docker bee image
+        if: ${{ github.event.inputs.beeVersionAsCommitHash != 'true' && success() }}
         run: |
           npm run build:env
+      - name: Build images using built docker bee image
+        if: ${{ github.event.inputs.beeVersionAsCommitHash == 'true' && success() }}
+        run: |
+          npm run build:env -- --build-base-bee --base-bee-commit-hash=$BEE_VERSION
       - name: Publish if it was clicked manually
         if: ${{ github.event.inputs.buildImage == 'true' && success() }}
         run: |
