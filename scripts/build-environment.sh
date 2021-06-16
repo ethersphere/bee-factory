@@ -16,16 +16,17 @@ build_bee() {
     if [ -d "$BEE_SOURCE_PATH" ] ; then
         rm -rf "$BEE_SOURCE_PATH"
     fi
-    mkdir "$BEE_SOURCE_PATH" && cd "$BEE_SOURCE_PATH" || exit
+    mkdir "$BEE_SOURCE_PATH" && cd "$BEE_SOURCE_PATH" || exit 1
     git init
     git remote add origin https://github.com/ethersphere/bee.git
     git fetch origin --depth=1 "$COMMIT_HASH"
     git reset --hard FETCH_HEAD
     # Build bee and make docker image
-    export BEE_VERSION=${COMMIT_HASH::7}-commit
+    BEE_VERSION=${COMMIT_HASH::7}-commit
     make binary
     echo "Bee image will be built with version: $BEE_VERSION"
     docker build . -t ethersphere/bee:$BEE_VERSION
+    cd "$MY_PATH" || exit 1
 }
 
 MY_PATH=$(dirname "$0")
@@ -62,3 +63,5 @@ npm run migrate:contracts
 npm run supply
 "$MY_PATH/blockchain-docker-build.sh"
 "$MY_PATH/bee-docker-build.sh"
+
+echo "Successfully build bee environment. Please set BEE_VERSION variable to $BEE_VERSION to run the built environment"
