@@ -10,6 +10,10 @@ USAGE
     exit 1
 }
 
+echoerr() {
+     >&2 echo "$@"
+}
+
 build_bee() {
     # Clone source code
     BEE_SOURCE_PATH=$MY_PATH/../bee
