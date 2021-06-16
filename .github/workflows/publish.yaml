@@ -53,6 +53,9 @@ jobs:
         if: ${{ github.event.inputs.beeVersionAsCommitHash == 'true' && success() }}
         run: |
           npm run build:env -- --build-base-bee --base-bee-commit-hash=$BEE_VERSION
+          echo "retrieve built BEE_VERSION value"
+          export COMMIT_VERSION_TAG=true
+          export BEE_VERSION=$( ./scripts/utils/build-image-tag.sh get )
       - name: Publish if it was clicked manually
         if: ${{ github.event.inputs.buildImage == 'true' && success() }}
         run: |
