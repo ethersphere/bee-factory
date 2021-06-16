@@ -24,6 +24,7 @@ env:
   BEE_IMAGE_PREFIX: 'docker.pkg.github.com/ethersphere/bee-factory'
   COMMIT_VERSION_TAG: ${{ github.event.inputs.commitVersionTag }}
   BEE_VERSION: ${{ github.event.inputs.beeVersion }}
+  BUILD_IMAGE: ${{ github.event.inputs.beeVersionAsCommitHash }}
 
 jobs:
   bee-images:
@@ -53,10 +54,13 @@ jobs:
         if: ${{ github.event.inputs.beeVersionAsCommitHash == 'true' && success() }}
         run: |
           npm run build:env -- --build-base-bee --base-bee-commit-hash=$BEE_VERSION
-          echo "retrieve built BEE_VERSION value"
-          export COMMIT_VERSION_TAG=true
-          export BEE_VERSION=$( ./scripts/utils/build-image-tag.sh get )
       - name: Publish if it was clicked manually
         if: ${{ github.event.inputs.buildImage == 'true' && success() }}
         run: |
+          if [ $BUILD_IMAGE == 'true' ] ; then
+            echo "retrieve built BEE_VERSION value"
+            COMMIT_VERSION_TAG=true
+            BEE_VERSION=$( ./scripts/utils/build-image-tag.sh get )
+            echo "Retreived Bee version: $BEE_VERSION"
+          fi
           npm run publish:env

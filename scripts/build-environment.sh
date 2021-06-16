@@ -22,7 +22,7 @@ build_bee() {
     git fetch origin --depth=1 "$COMMIT_HASH"
     git reset --hard FETCH_HEAD
     # Build bee and make docker image
-    BEE_VERSION=${COMMIT_HASH::7}-commit
+    export BEE_VERSION=${COMMIT_HASH::7}-commit
     make binary
     echo "Bee image will be built with version: $BEE_VERSION"
     docker build . -t ethersphere/bee:$BEE_VERSION
