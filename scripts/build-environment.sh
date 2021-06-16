@@ -27,6 +27,8 @@ build_bee() {
     echo "Bee image will be built with version: $BEE_VERSION"
     docker build . -t ethersphere/bee:$BEE_VERSION
     cd "$MY_PATH" || exit 1
+    # Set build image tag so that other terminal session can retrieve
+    "$MY_PATH/utils/build-image-tag.sh" set "$BEE_VERSION"
 }
 
 MY_PATH=$(dirname "$0")
