@@ -52,7 +52,7 @@ jobs:
       - name: Build images using built docker bee image
         if: ${{ github.event.inputs.beeVersionAsCommitHash == 'true' && success() }}
         run: |
-          source ./scripts/build-environment.sh  --build-base-bee --base-bee-commit-hash=$BEE_VERSION
+          npm run build:env -- --build-base-bee --base-bee-commit-hash=$BEE_VERSION
       - name: Publish if it was clicked manually
         if: ${{ github.event.inputs.buildImage == 'true' && success() }}
         run: |
