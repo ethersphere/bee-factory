@@ -93,6 +93,8 @@ npm run migrate:contracts
 npm run supply
 if $GEN_TRAFFIC ; then
     echo "Bee image with special state will be commited... traffic generation is on."
+    export BEE_VERSION=$BEE_VERSION-stateful
+    echo "Bee image tag has changed to $BEE_VERSION"
     echo "Start Bee nodes so that traffic can be generated and commited to the images"
     ./scripts/bee.sh start --workers=$SUPPORTED_WORKER_N --detach
     echo "Generating traffic on Bee node $GEN_TRAFFIC_UPLOAD_NODE"
