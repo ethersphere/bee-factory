@@ -63,10 +63,4 @@ jobs:
       - name: Publish if it was clicked manually
         if: ${{ github.event.inputs.buildImage == 'true' && success() }}
         run: |
-          if [ $BUILD_IMAGE == 'true' ] ; then
-            echo "retrieve built BEE_VERSION value"
-            export COMMIT_VERSION_TAG=true
-            export BEE_VERSION=$( ./scripts/utils/build-image-tag.sh get )
-            echo "Retreived Bee version: $BEE_VERSION"
-          fi
           npm run publish:env
