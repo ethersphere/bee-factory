@@ -7,15 +7,16 @@ BUILD_IMAGE=$("$MY_PATH/utils/env-variable-value.sh" BUILD_IMAGE)
 BLOCKCHAIN_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BLOCKCHAIN_VERSION)
 
 if [ $BUILD_IMAGE == 'true' ] ; then
-  # Necessary for getch BEE_VERSION from .commit-version-tag
+  # Necessary for fetch BEE_VERSION from .commit-version-tag
   export COMMIT_VERSION_TAG=true
 fi
+
+BEE_VERSION=$("$MY_PATH/utils/build-image-tag.sh" get)
 
 if [ $STATE_COMMIT == 'true' ] ; then
   BLOCKCHAIN_VERSION+="-for-$BEE_VERSION"
 fi
 
-BEE_VERSION=$("$MY_PATH/utils/build-image-tag.sh" get)
 BEE_ENV_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_ENV_PREFIX)
 BEE_IMAGE_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_IMAGE_PREFIX)
 BLOCKCHAIN_NAME="$BEE_ENV_PREFIX-blockchain"
