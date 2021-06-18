@@ -2,7 +2,7 @@ const axios = require('axios').default;
 const { Bee, BeeDebug } = require('@ethersphere/bee-js');
 
 const SLEEP_BETWEEN_UPLOADS_MS = 500
-const POSTAGE_STAMPS_AMOUNT = BigInt(10000)
+const POSTAGE_STAMPS_AMOUNT = '10000'
 const POSTAGE_STAMPS_DEPTH = 20
 
 /**
