@@ -3,7 +3,7 @@ const { Bee, BeeDebug } = require('@ethersphere/bee-js');
 
 const SLEEP_BETWEEN_UPLOADS_MS = 500
 const POSTAGE_STAMPS_AMOUNT = '10000'
-const POSTAGE_STAMPS_DEPTH = 20
+const POSTAGE_STAMPS_DEPTH = 32
 
 /**
  * Lehmer random number generator with seed (minstd_rand in C++11)
