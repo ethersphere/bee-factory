@@ -105,7 +105,7 @@ if $GEN_TRAFFIC ; then
     export STATE_COMMIT='true'
     echo "Bee image with special state will be commited... traffic generation is on."
     echo "Start Bee nodes so that traffic can be generated and commited to the images"
-    "$MY_PATH/bee.sh" start --workers=$SUPPORTED_WORKER_N --detach
+    "$MY_PATH/bee.sh" start --workers=$SUPPORTED_WORKER_N --detach --ephemeral
     echo "Generating traffic on Bee node $GEN_TRAFFIC_UPLOAD_NODE"
     echo "Run traffic generation until $CHEQUES_COUNT incoming cheques will arrive to node under Debug API $GEN_TRAFFIC_CHECKER_NODE"
     npm run gen:traffic -- "$CHEQUES_COUNT" "$GEN_TRAFFIC_UPLOAD_NODE;$GEN_TRAFFIC_CHECKER_NODE"
