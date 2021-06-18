@@ -13,6 +13,9 @@ on:
       beeVersionAsCommitHash:
         description: 'The beeVersion parameter will be interpreted as a source code commit hash that the bee base image will be built on'
         default: 'false'
+      stateCommit:
+        description: 'The images will have cheques by the traffic generation'
+        default: 'false'
   push:
     branches:
       - 'master'
@@ -25,6 +28,7 @@ env:
   COMMIT_VERSION_TAG: ${{ github.event.inputs.commitVersionTag }}
   BEE_VERSION: ${{ github.event.inputs.beeVersion }}
   BUILD_IMAGE: ${{ github.event.inputs.beeVersionAsCommitHash }}
+  STATE_COMMIT: ${{ github.event.inputs.stateCommit }}
 
 jobs:
   bee-images:
