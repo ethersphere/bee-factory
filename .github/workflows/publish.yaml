@@ -50,14 +50,16 @@ jobs:
       - name: Install npm deps
         if: steps.cache-npm.outputs.cache-hit != 'true'
         run: npm ci
-      - name: Build images using base docker bee image
-        if: ${{ github.event.inputs.beeVersionAsCommitHash != 'true' && success() }}
+      - name: Build images
         run: |
-          npm run build:env
-      - name: Build images using built docker bee image
-        if: ${{ github.event.inputs.beeVersionAsCommitHash == 'true' && success() }}
-        run: |
-          npm run build:env -- --build-base-bee --base-bee-commit-hash=$BEE_VERSION
+          BUILD_PARAMS=""
+          if [ $BUILD_IMAGE == 'true' ] ; then
+            BUILD_PARAMS+=" --build-base-bee --base-bee-commit-hash=$BEE_VERSION"
+          fi
+          if [ $STATE_COMMIT == 'true' ] ; then
+            BUILD_PARAMS+=" --gen-traffic"
+          fi
+          npm run build:env -- $BUILD_PARAMS
       - name: Publish if it was clicked manually
         if: ${{ github.event.inputs.buildImage == 'true' && success() }}
         run: |
