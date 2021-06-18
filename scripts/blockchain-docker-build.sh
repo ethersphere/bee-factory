@@ -8,8 +8,9 @@ BLOCKCHAIN_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BLOCKCHAIN_VERSION)
 STATE_COMMIT=$("$MY_PATH/utils/env-variable-value.sh" STATE_COMMIT)
 
 if [ "$STATE_COMMIT" == 'true'  ] ; then
+  export COMMIT_VERSION_TAG='true'
   BEE_VERSION=$("$MY_PATH/utils/build-image-tag.sh" get)
-  BLOCKCHAIN_VERSION+="-$BEE_VERSION"
+  BLOCKCHAIN_VERSION+="for-$BEE_VERSION"
   echo "Blockchain will have image version: $BLOCKCHAIN_VERSION"
 fi
 
