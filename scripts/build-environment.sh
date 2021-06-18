@@ -114,5 +114,3 @@ if $GEN_TRAFFIC ; then
 fi
 "$MY_PATH/bee-docker-build.sh"
 "$MY_PATH/blockchain-docker-build.sh"
-
-echo "Successfully build bee environment. Base Bee image label is: $BEE_VERSION"
