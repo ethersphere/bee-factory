@@ -5,6 +5,13 @@ MY_PATH=$( cd "$MY_PATH" && pwd )
 BEE_ENV_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_ENV_PREFIX)
 BEE_IMAGE_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_IMAGE_PREFIX)
 BLOCKCHAIN_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BLOCKCHAIN_VERSION)
+STATE_COMMIT=$("$MY_PATH/utils/env-variable-value.sh" STATE_COMMIT)
+
+if [ "$STATE_COMMIT" == 'true'  ] ; then
+  BEE_VERSION=$("$MY_PATH/utils/build-image-tag.sh" get)
+  BLOCKCHAIN_VERSION+="-$BEE_VERSION"
+  echo "Blockchain will have image version: $BLOCKCHAIN_VERSION"
+fi
 
 NAME="$BEE_ENV_PREFIX-blockchain"
 
