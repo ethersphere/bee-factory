@@ -104,6 +104,9 @@ npm run supply
 if $GEN_TRAFFIC ; then
     export STATE_COMMIT='true'
     echo "Bee image with special state will be commited... traffic generation is on."
+    # give the permission to the bee user
+    BEE_DIR_PATH="$MY_PATH/bee-data-dirs/"
+    sudo chown 999:999 -R "$BEE_DIR_PATH"
     echo "Start Bee nodes so that traffic can be generated and commited to the images"
     "$MY_PATH/bee.sh" start --workers=$SUPPORTED_WORKER_N --detach
     echo "Generating traffic on Bee node $GEN_TRAFFIC_UPLOAD_NODE"

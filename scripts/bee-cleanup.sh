@@ -12,8 +12,6 @@ do
   sudo rm -rf "$BEE_DIR_PATH/localstore"
   sudo rm -rf "$BEE_DIR_PATH/statestore"
 done
-# give the permission to the bee user
-sudo chmod 777 -R "$BEE_DIR_PATH"
 
 echo "Removing built Bee Docker images..."
 
