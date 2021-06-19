@@ -82,6 +82,9 @@ async function genTrafficLoop(hosts, minCheques) {
 
   const bees = await Promise.all(promises)
 
+  console.log(`wait 11 secs (>10 block time) before postage stamp usages`)
+  await sleep(11*1000)
+
   while(true) {
     await genTrafficOnOpenPorts(bees)
     
@@ -96,14 +99,13 @@ async function genTrafficLoop(hosts, minCheques) {
         const lastCashOutPromises = incomingCheques.map(({ peer }) => beeDebug.getLastCashoutAction(peer))
         const lastCashOuts = await Promise.all(lastCashOutPromises)
         for(const [index, lastCashOut] of lastCashOuts.entries()) {
-          if(lastCashOut.uncashedAmount > 0) {
+          if(BigInt(lastCashOut.uncashedAmount) > 0) {
             uncashedCheques.push(incomingCheques[index])
           }
         }
         
         beesUncashedCheques.push(uncashedCheques)
       }
-
       if(beesUncashedCheques.every(uncashedCheques => uncashedCheques.length >= minCheques)) {
         console.log(`Generated at least ${minCheques} for every node on the given Debug API endpoints`,)
         break
