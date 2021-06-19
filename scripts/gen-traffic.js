@@ -1,7 +1,7 @@
 const axios = require('axios').default;
 const { Bee, BeeDebug } = require('@ethersphere/bee-js');
 
-const SLEEP_BETWEEN_UPLOADS_MS = 500
+const SLEEP_BETWEEN_UPLOADS_MS = 1000
 const POSTAGE_STAMPS_AMOUNT = '10000'
 const POSTAGE_STAMPS_DEPTH = 32
 
@@ -75,7 +75,7 @@ async function genTrafficLoop(hosts, minCheques) {
 
     console.log(`Create postage stamp on ${beeApiUrl}...`)
     const postageBatchId = await bee.createPostageBatch(POSTAGE_STAMPS_AMOUNT, POSTAGE_STAMPS_DEPTH)
-    console.log(`Generated ${postageBatchId} postage stamp on ${host}...`)
+    console.log(`Generated ${postageBatchId} postage stamp on ${beeApiUrl}...`)
 
     return {bee, beeDebug, postageBatchId}
   })
