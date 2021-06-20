@@ -13,6 +13,9 @@ on:
       beeVersionAsCommitHash:
         description: 'The beeVersion parameter will be interpreted as a source code commit hash that the bee base image will be built on'
         default: 'false'
+      stateCommit:
+        description: 'The images will have cheques by the traffic generation'
+        default: 'false'
   push:
     branches:
       - 'master'
@@ -25,6 +28,7 @@ env:
   COMMIT_VERSION_TAG: ${{ github.event.inputs.commitVersionTag }}
   BEE_VERSION: ${{ github.event.inputs.beeVersion }}
   BUILD_IMAGE: ${{ github.event.inputs.beeVersionAsCommitHash }}
+  STATE_COMMIT: ${{ github.event.inputs.stateCommit }}
 
 jobs:
   bee-images:
@@ -46,21 +50,17 @@ jobs:
       - name: Install npm deps
         if: steps.cache-npm.outputs.cache-hit != 'true'
         run: npm ci
-      - name: Build images using base docker bee image
-        if: ${{ github.event.inputs.beeVersionAsCommitHash != 'true' && success() }}
+      - name: Build images
         run: |
-          npm run build:env
-      - name: Build images using built docker bee image
-        if: ${{ github.event.inputs.beeVersionAsCommitHash == 'true' && success() }}
-        run: |
-          npm run build:env -- --build-base-bee --base-bee-commit-hash=$BEE_VERSION
+          BUILD_PARAMS=""
+          if [ $BUILD_IMAGE == 'true' ] ; then
+            BUILD_PARAMS+=" --build-base-bee --base-bee-commit-hash=$BEE_VERSION"
+          fi
+          if [ $STATE_COMMIT == 'true' ] ; then
+            BUILD_PARAMS+=" --gen-traffic"
+          fi
+          npm run build:env -- $BUILD_PARAMS
       - name: Publish if it was clicked manually
         if: ${{ github.event.inputs.buildImage == 'true' && success() }}
         run: |
-          if [ $BUILD_IMAGE == 'true' ] ; then
-            echo "retrieve built BEE_VERSION value"
-            export COMMIT_VERSION_TAG=true
-            export BEE_VERSION=$( ./scripts/utils/build-image-tag.sh get )
-            echo "Retreived Bee version: $BEE_VERSION"
-          fi
           npm run publish:env
