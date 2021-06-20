@@ -8,7 +8,7 @@ BLOCKCHAIN_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BLOCKCHAIN_VERSION)
 
 if [ $BUILD_IMAGE == 'true' ] ; then
   # Necessary for fetch BEE_VERSION from .commit-version-tag
-  export COMMIT_VERSION_TAG=true
+  export COMMIT_VERSION_TAG='true'
 fi
 
 BEE_VERSION=$("$MY_PATH/utils/build-image-tag.sh" get)
