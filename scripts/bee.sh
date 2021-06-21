@@ -21,7 +21,6 @@ PARAMETERS:
     --own-image                 If passed, the used Docker image names will be identical as the name of the workers.
     --version=x.y.z             used version of Bee client.
     --detach                    It will not log the output of Queen node at the end of the process.
-    --payment-threshold         The threshold in BZZ where you expect to get paid from your peers. (without decimals, default: 310000000000)
 USAGE
     exit 1
 }
@@ -107,8 +106,8 @@ PORT_MAPS=2
 SWAP=true
 SWAP_FACTORY_ADDRESS="0x5b1869D9A4C187F2EAa108f3062412ecf0526b24"
 POSTAGE_STAMP_ADDRESS="0xCfEB869F69431e42cdB54A4F4f105C19C080A601"
+PRICE_ORACLE_ADDRESS="0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B"
 INIT_ROOT_DATA_DIR="$MY_PATH/bee-data-dirs"
-PAYMENT_THRESHOLD="310000000000"
 
 # Decide script action
 case "$1" in
@@ -146,10 +145,6 @@ do
         ;;
         --port-maps=*)
         PORT_MAPS="${1#*=}"
-        shift 1
-        ;;
-        --payment-treshold=*)
-        PAYMENT_THRESHOLD="${1#*=}"
         shift 1
         ;;
         --own-image)
@@ -197,6 +192,7 @@ if [ -z "$QUEEN_CONTAINER_IN_DOCKER" ] || $EPHEMERAL ; then
       $EXTRA_QUEEN_PARAMS \
       $DOCKER_IMAGE \
         start \
+        --warmup-time=0 \
         --password "$BEE_PASSWORD" \
         --bootnode="$QUEEN_BOOTNODE" \
         --debug-api-enable \
@@ -204,8 +200,8 @@ if [ -z "$QUEEN_CONTAINER_IN_DOCKER" ] || $EPHEMERAL ; then
         --swap-enable=$SWAP \
         --swap-endpoint="http://$SWARM_BLOCKCHAIN_NAME:9545" \
         --swap-factory-address=$SWAP_FACTORY_ADDRESS \
-        --payment-threshold="$PAYMENT_THRESHOLD" \
         --postage-stamp-address=$POSTAGE_STAMP_ADDRESS \
+        --price-oracle-address=$PRICE_ORACLE_ADDRESS \
         --network-id 4020 \
         --full-node=true \
         --welcome-message="You have found the queen of the beehive..." \
@@ -246,14 +242,15 @@ for i in $(seq 1 1 "$WORKERS"); do
         $EXTRA_WORKER_PARAMS \
         $DOCKER_IMAGE \
           start \
+          --warmup-time=0 \
           --password "$BEE_PASSWORD" \
           --bootnode="$QUEEN_UNDERLAY_ADDRESS" \
           --debug-api-enable \
           --swap-enable=$SWAP \
           --swap-endpoint="http://$SWARM_BLOCKCHAIN_NAME:9545" \
           --swap-factory-address=$SWAP_FACTORY_ADDRESS \
-          --payment-threshold="$PAYMENT_THRESHOLD" \
           --postage-stamp-address=$POSTAGE_STAMP_ADDRESS \
+          --price-oracle-address=$PRICE_ORACLE_ADDRESS \
           --network-id 4020 \
           --full-node=true \
           --welcome-message="I'm just Bee worker ${i} in the beehive." \
