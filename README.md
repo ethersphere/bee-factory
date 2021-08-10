@@ -6,7 +6,14 @@ All services run in `Docker` containers only.
 
 Currently, the repository supports running Bee nodes up to 5 by default.
 
-# Usage
+## Maintainers
+
+- [nugaon](https://github.com/nugaon)
+- [Cafe137](https://github.com/Cafe137)
+
+See what "Maintainer" means [here](https://github.com/ethersphere/repo-maintainer).
+
+## Usage
 The whole Bee environment (with blockchain) can be started by [running one script](###Run-Environment),
 but for that you need to have the necessary Docker images, which is possible to build yourself by [running some scripts](###Setup-the-environment)
 
