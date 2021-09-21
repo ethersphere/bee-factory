@@ -21,6 +21,7 @@ PARAMETERS:
     --own-image                 If passed, the used Docker image names will be identical as the name of the workers.
     --version=x.y.z             used version of Bee client.
     --detach                    It will not log the output of Queen node at the end of the process.
+    --hostname=string           Interface to which should the nodes be bound (default 127.0.0.0).
 USAGE
     exit 1
 }
@@ -55,7 +56,7 @@ fetch_queen_underlay_addr() {
     # Wait 2 mins for queen start
     TIMEOUT=$((2*12*WAITING_TIME))
     while (( TIMEOUT > ELAPSED_TIME )) ; do
-        QUEEN_UNDERLAY_ADDRESS=$(curl -s localhost:1635/addresses | python -mjson.tool | grep "/ip4/" | awk '!/127.0.0.1/' | sed 's/,$//' | xargs)
+        QUEEN_UNDERLAY_ADDRESS=$(curl -s "$HOSTNAME:1635/addresses" | python -mjson.tool | grep "/ip4/" | awk "!/$HOSTNAME/" | sed 's/,$//' | xargs)
         if [[ -z "$QUEEN_UNDERLAY_ADDRESS" ]] ; then
             echo "Waiting for the Queen initialization..."
             ELAPSED_TIME=$((ELAPSED_TIME+WAITING_TIME))
@@ -65,7 +66,7 @@ fetch_queen_underlay_addr() {
             break;
         fi
     done
-    
+
     if (( TIMEOUT == ELAPSED_TIME )) ; then
         queen_failure
     fi
@@ -77,8 +78,8 @@ log_queen() {
 }
 
 count_connected_peers() {
-    COUNT=$( (curl -s http://localhost:1635/peers | python -c 'import json,sys; obj=json.load(sys.stdin); print (len(obj["peers"]));') || echo 0 )
-    
+    COUNT=$( (curl -s "http://$HOSTNAME:1635/peers" | python -c 'import json,sys; obj=json.load(sys.stdin); print (len(obj["peers"]));') || echo 0 )
+
     echo "$COUNT"
 }
 
@@ -108,6 +109,7 @@ SWAP_FACTORY_ADDRESS="0x5b1869D9A4C187F2EAa108f3062412ecf0526b24"
 POSTAGE_STAMP_ADDRESS="0xCfEB869F69431e42cdB54A4F4f105C19C080A601"
 PRICE_ORACLE_ADDRESS="0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B"
 INIT_ROOT_DATA_DIR="$MY_PATH/bee-data-dirs"
+HOSTNAME="127.0.0.1"
 
 # Decide script action
 case "$1" in
@@ -155,6 +157,10 @@ do
         LOG=false
         shift 1
         ;;
+        --hostname=*)
+        HOSTNAME="${1#*=}"
+        shift 1
+        ;;
         --help)
         usage
         ;;
@@ -180,7 +186,7 @@ if [ -z "$QUEEN_CONTAINER_IN_DOCKER" ] || $EPHEMERAL ; then
         EXTRA_QUEEN_PARAMS="-v $INIT_ROOT_DATA_DIR/$QUEEN_CONTAINER_NAME:/home/bee/.bee"
     fi
     if [ "$PORT_MAPS" -ge 1 ] ; then
-        EXTRA_QUEEN_PARAMS="$EXTRA_QUEEN_PARAMS -p 127.0.0.1:1633-1635:1633-1635"
+        EXTRA_QUEEN_PARAMS="$EXTRA_QUEEN_PARAMS -p $HOSTNAME:1633-1635:1633-1635"
     fi
 
     echo "start Bee Queen process"
@@ -229,7 +235,7 @@ for i in $(seq 1 1 "$WORKERS"); do
         if [ $PORT_MAPS -gt $i ] ; then
             PORT_START=$((1633+(10000*i)))
             PORT_END=$((PORT_START + 2))
-            EXTRA_WORKER_PARAMS="$EXTRA_WORKER_PARAMS -p 127.0.0.1:$PORT_START-$PORT_END:1633-1635"
+            EXTRA_WORKER_PARAMS="$EXTRA_WORKER_PARAMS -p $HOSTNAME:$PORT_START-$PORT_END:1633-1635"
         fi
 
         # run docker container
