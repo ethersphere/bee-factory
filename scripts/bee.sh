@@ -58,7 +58,7 @@ fetch_queen_underlay_addr() {
     # Wait 2 mins for queen start
     TIMEOUT=$((2*12*WAITING_TIME))
     while (( TIMEOUT > ELAPSED_TIME )) ; do
-        QUEEN_UNDERLAY_ADDRESS=$(curl -s "$HOSTNAME:1635/addresses" | python -mjson.tool | grep "/ip4/" | awk "!/$HOSTNAME/" | sed 's/,$//' | xargs)
+        QUEEN_UNDERLAY_ADDRESS=$(curl -s "$HOSTNAME:1635/addresses" | python -mjson.tool | grep "/ip4/" | awk "!/127.0.0.1/" | sed 's/,$//' | xargs)
         if [[ -z "$QUEEN_UNDERLAY_ADDRESS" ]] ; then
             echo "Waiting for the Queen initialization..."
             ELAPSED_TIME=$((ELAPSED_TIME+WAITING_TIME))
