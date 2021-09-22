@@ -133,6 +133,3 @@ echo "Start Bee nodes..."
 if $LOG ; then
     docker stop $SWARM_BLOCKCHAIN_NAME
 fi
-
-docker ps -a
-sudo netstat -tlpn
