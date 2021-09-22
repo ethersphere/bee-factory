@@ -15,6 +15,7 @@ PARAMETERS:
                                 2. 11633:11635
                                 3. 21633:21635 (...)
                                 number represents the nodes number to map from. Default is 2.
+    --hostname=string           Interface to which should the nodes be bound (default 127.0.0.0).
 USAGE
     exit 1
 }
@@ -44,6 +45,7 @@ LOG=true
 SWARM_BLOCKCHAIN_NAME="$BEE_ENV_PREFIX-blockchain"
 SWARM_NETWORK="$BEE_ENV_PREFIX-network"
 PORT_MAPS=2
+HOSTNAME="127.0.0.1"
 
 # Decide script action
 case "$1" in
@@ -80,6 +82,10 @@ do
         LOG=false
         shift 1
         ;;
+        --hostname=*)
+        HOSTNAME="${1#*=}"
+        shift 1
+        ;;
         --help)
         usage
         ;;
@@ -97,7 +103,7 @@ echo "Create Docker network..."
 echo "Start Blockchain node..."
 BLOCKCHAIN_CONTAINER=$(docker container ls -qaf name=$SWARM_BLOCKCHAIN_NAME)
 if [ -z "$BLOCKCHAIN_CONTAINER" ] ; then
-    BLOCKCHAIN_ARGUMENTS="--name $SWARM_BLOCKCHAIN_NAME --network $SWARM_NETWORK -p 127.0.0.1:9545:9545 -d"
+    BLOCKCHAIN_ARGUMENTS="--name $SWARM_BLOCKCHAIN_NAME --network $SWARM_NETWORK -p $HOSTNAME:9545:9545 -d"
     if $EPHEMERAL ; then
         BLOCKCHAIN_ARGUMENTS="$BLOCKCHAIN_ARGUMENTS --rm"
     fi
@@ -110,7 +116,7 @@ fi
 sleep 5
 
 # Build up bee.sh parameters
-BEE_SH_ARGUMENTS="--workers=$WORKERS --own-image --port-maps=$PORT_MAPS"
+BEE_SH_ARGUMENTS="--workers=$WORKERS --own-image --port-maps=$PORT_MAPS --hostname=$HOSTNAME"
 if $EPHEMERAL ; then
     BEE_SH_ARGUMENTS="$BEE_SH_ARGUMENTS --ephemeral"
 fi
@@ -122,7 +128,7 @@ fi
 echo "Start Bee nodes..."
 "$MY_PATH/bee.sh" start $BEE_SH_ARGUMENTS
 
-# If the code run reach this point without detach flag, 
+# If the code run reach this point without detach flag,
 # then the user interrupted the log process in the bee.sh
 if $LOG ; then
     docker stop $SWARM_BLOCKCHAIN_NAME
