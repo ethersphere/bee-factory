@@ -1,4 +1,7 @@
 #!/bin/bash
+
+set -x
+
 usage() {
     cat << USAGE >&2
 USAGE:

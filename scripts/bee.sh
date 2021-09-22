@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 echoerr() { if [[ $QUIET -ne 1 ]] ; then echo "$@" 1>&2; fi }
 
 usage() {
