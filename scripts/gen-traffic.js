@@ -2,16 +2,16 @@ const { Bee, BeeDebug } = require('@ethersphere/bee-js')
 
 class BeePair {
     /**
-     * @param {Bee} generatorBee
-     * @param {Bee} receiverBee
+     * @param {BeeDebug} chequeReceiverBeeDebug
+     * @param {Bee} uploaderBee
      * @param {BeeDebug} receiverBeeDebug
      * @param {string} receiverStamp
      */
-    constructor(generatorBee, receiverBee, receiverBeeDebug, receiverStamp) {
-        this.generatorBee = generatorBee
-        this.receiverBee = receiverBee
-        this.receiverBeeDebug = receiverBeeDebug
-        this.receiverStamp = receiverStamp
+    constructor(chequeReceiverBeeDebug, uploaderBee, uploaderBeeDebug, uploaderStamp) {
+        this.chequeReceiverBeeDebug = chequeReceiverBeeDebug
+        this.uploaderBee = uploaderBee
+        this.uploaderBeeDebug = uploaderBeeDebug
+        this.uploaderStamp = uploaderStamp
     }
 }
 
@@ -51,10 +51,10 @@ function randomByteArray(length, seed = 500) {
 /**
  * @param {BeePair} beePair
  */
-async function trafficGen(beePair, seed = 500, bytes = 1024 * 4 * 400) {
+async function uploadRandomBytes(beePair, seed = 500, bytes = 1024 * 4 * 400) {
     const randomBytes = randomByteArray(bytes, seed)
-    const ref = await beePair.receiverBee.uploadData(beePair.receiverStamp, randomBytes)
-    console.log(`Generated ${bytes} bytes traffic, the random data's root reference: ${ref}`)
+    const reference = await beePair.uploaderBee.uploadData(beePair.uploaderStamp, randomBytes)
+    console.log(`${beePair.uploaderBee.url} uploaded ${bytes} bytes to ${reference}`)
 }
 
 /**
@@ -64,8 +64,7 @@ async function trafficGen(beePair, seed = 500, bytes = 1024 * 4 * 400) {
  */
 async function genTrafficOnOpenPorts(beePairs) {
     const promises = beePairs.map(beePair => {
-        console.log(`${beePair.receiverBee.url} will receive cheques from ${beePair.generatorBee.url}`)
-        return trafficGen(beePair, new Date().getTime())
+        return uploadRandomBytes(beePair, Date.now())
     })
     await Promise.all(promises)
 }
@@ -86,16 +85,16 @@ function sleep(ms) {
  */
 async function genTrafficLoop(hosts, minCheques) {
     const promises = hosts.map(async host => {
-        const [generatorBeeApiUrl, receiverBeeApiUrl, receiverBeeDebugApiUrl] = host.split(';')
-        const generatorBee = new Bee(generatorBeeApiUrl)
-        const receiverBee = new Bee(receiverBeeApiUrl)
-        const receiverBeeDebug = new BeeDebug(receiverBeeDebugApiUrl)
+        const [chequeReceiverBeeDebugUrl, uploaderBeeUrl, uploaderBeeDebugUrl] = host.split(';')
+        const chequeReceiverBeeDebug = new BeeDebug(chequeReceiverBeeDebugUrl)
+        const uploaderBee = new Bee(uploaderBeeUrl)
+        const uploaderBeeDebug = new BeeDebug(uploaderBeeDebugUrl)
 
-        console.log(`Creating postage stamp on ${receiverBeeApiUrl} <=> ${receiverBeeDebugApiUrl}...`)
-        const postageBatchId = await receiverBeeDebug.createPostageBatch(POSTAGE_STAMPS_AMOUNT, POSTAGE_STAMPS_DEPTH)
-        console.log(`Generated ${postageBatchId} postage stamp on ${beeApiUrl}...`)
+        console.log(`Creating postage stamp on ${uploaderBeeDebugUrl}...`)
+        const postageBatchId = await uploaderBeeDebug.createPostageBatch(POSTAGE_STAMPS_AMOUNT, POSTAGE_STAMPS_DEPTH)
+        console.log(`Generated ${postageBatchId} postage stamp on ${uploaderBeeDebugUrl}...`)
 
-        return new BeePair(generatorBee, receiverBee, receiverBeeDebug, postageBatchId)
+        return new BeePair(chequeReceiverBeeDebug, uploaderBee, uploaderBeeDebug, postageBatchId)
     })
 
     const bees = await Promise.all(promises)
@@ -109,13 +108,13 @@ async function genTrafficLoop(hosts, minCheques) {
         if (!isNaN(minCheques)) {
             const beesUncashedCheques = []
             for (const beePair of bees) {
-                const { receiverBeeDebug } = beePair
-                const { lastcheques } = await receiverBeeDebug.getLastCheques()
+                const { chequeReceiverBeeDebug } = beePair
+                const { lastcheques } = await chequeReceiverBeeDebug.getLastCheques()
                 const incomingCheques = lastcheques.filter(cheque => !!cheque.lastreceived)
 
                 const uncashedCheques = []
                 const lastCashOutPromises = incomingCheques.map(({ peer }) =>
-                    receiverBeeDebug.getLastCashoutAction(peer)
+                    chequeReceiverBeeDebug.getLastCashoutAction(peer)
                 )
                 const lastCashOuts = await Promise.all(lastCashOutPromises)
                 for (const [index, lastCashOut] of lastCashOuts.entries()) {
@@ -147,7 +146,7 @@ let inputArray = process.argv.slice(2)
 let minCheques = parseInt(inputArray[0])
 let hosts = inputArray.slice(1)
 if (hosts.length === 0) {
-    hosts = ['http://localhost:1633;http://localhost:11633;http://localhost:11635']
+    hosts = ['http://localhost:1635;http://localhost:11633;http://localhost:11635']
 }
 
 genTrafficLoop(hosts, minCheques)
