@@ -4,8 +4,8 @@ class BeePair {
     /**
      * @param {BeeDebug} chequeReceiverBeeDebug
      * @param {Bee} uploaderBee
-     * @param {BeeDebug} receiverBeeDebug
-     * @param {string} receiverStamp
+     * @param {BeeDebug} uploaderBeeDebug
+     * @param {string} uploaderStamp
      */
     constructor(chequeReceiverBeeDebug, uploaderBee, uploaderBeeDebug, uploaderStamp) {
         this.chequeReceiverBeeDebug = chequeReceiverBeeDebug
