@@ -1,25 +1,25 @@
 {
-    "name": "bee-factory",
-    "version": "0.0.1",
-    "description": "Setup Swarm Test Blockchain and arbitrary numbered Bee nodes",
-    "scripts": {
-        "compile:contracts": "truffle compile",
-        "migrate:contracts": "truffle migrate",
-        "supply": "truffle exec src/supply.js",
-        "build:env": "./scripts/build-environment.sh",
-        "publish:env": "./scripts/publish-environment.sh",
-        "run:env": "./scripts/environment.sh",
-        "gen:traffic": "node ./scripts/gen-traffic.js"
-    },
-    "dependencies": {
-        "@ethersphere/bee-js": "1.2.1",
-        "@openzeppelin/contracts": "^3.1.0",
-        "truffle": "^5.3.5"
-    },
-    "keywords": [
-        "swarm",
-        "ethereum-swarm",
-        "bee-factory"
-    ],
-    "license": "BSD-3-Clause"
+  "name": "bee-factory",
+  "version": "0.0.1",
+  "description": "Setup Swarm Test Blockchain and arbitrary numbered Bee nodes",
+  "scripts": {
+    "compile:contracts": "truffle compile",
+    "migrate:contracts": "truffle migrate",
+    "supply": "truffle exec src/supply.js",
+    "build:env": "./scripts/build-environment.sh",
+    "publish:env": "./scripts/publish-environment.sh",
+    "run:env": "./scripts/environment.sh",
+    "gen:traffic": "node ./scripts/gen-traffic.js"
+  },
+  "dependencies": {
+    "@ethersphere/bee-js": "1.2.1",
+    "@openzeppelin/contracts": "^3.1.0",
+    "truffle": "^5.3.5"
+  },
+  "keywords": [
+    "swarm",
+    "ethereum-swarm",
+    "bee-factory"
+  ],
+  "license": "BSD-3-Clause"
 }

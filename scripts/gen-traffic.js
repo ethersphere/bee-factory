@@ -1,18 +1,18 @@
 const { Bee, BeeDebug } = require('@ethersphere/bee-js')
 
 class BeePair {
-    /**
-     * @param {BeeDebug} chequeReceiverBeeDebug
-     * @param {Bee} uploaderBee
-     * @param {BeeDebug} uploaderBeeDebug
-     * @param {string} uploaderStamp
-     */
-    constructor(chequeReceiverBeeDebug, uploaderBee, uploaderBeeDebug, uploaderStamp) {
-        this.chequeReceiverBeeDebug = chequeReceiverBeeDebug
-        this.uploaderBee = uploaderBee
-        this.uploaderBeeDebug = uploaderBeeDebug
-        this.uploaderStamp = uploaderStamp
-    }
+  /**
+   * @param {BeeDebug} chequeReceiverBeeDebug
+   * @param {Bee} uploaderBee
+   * @param {BeeDebug} uploaderBeeDebug
+   * @param {string} uploaderStamp
+   */
+  constructor(chequeReceiverBeeDebug, uploaderBee, uploaderBeeDebug, uploaderStamp) {
+    this.chequeReceiverBeeDebug = chequeReceiverBeeDebug
+    this.uploaderBee = uploaderBee
+    this.uploaderBeeDebug = uploaderBeeDebug
+    this.uploaderStamp = uploaderStamp
+  }
 }
 
 const SLEEP_BETWEEN_UPLOADS_MS = 1000
@@ -26,7 +26,7 @@ const POSTAGE_STAMPS_DEPTH = 32
  * @param seed Seed for the pseudo-random generator
  */
 function lrng(seed) {
-    return () => ((2 ** 31 - 1) & (seed = Math.imul(48271, seed))) / 2 ** 31
+  return () => ((2 ** 31 - 1) & (seed = Math.imul(48271, seed))) / 2 ** 31
 }
 
 /**
@@ -38,23 +38,23 @@ function lrng(seed) {
  * @param seed Seed for the pseudo-random generator
  */
 function randomByteArray(length, seed = 500) {
-    const rand = lrng(seed)
-    const buf = new Uint8Array(length)
+  const rand = lrng(seed)
+  const buf = new Uint8Array(length)
 
-    for (let i = 0; i < length; ++i) {
-        buf[i] = (rand() * 0xff) << 0
-    }
+  for (let i = 0; i < length; ++i) {
+    buf[i] = (rand() * 0xff) << 0
+  }
 
-    return buf
+  return buf
 }
 
 /**
  * @param {BeePair} beePair
  */
 async function uploadRandomBytes(beePair, seed = 500, bytes = 1024 * 4 * 400) {
-    const randomBytes = randomByteArray(bytes, seed)
-    const reference = await beePair.uploaderBee.uploadData(beePair.uploaderStamp, randomBytes)
-    console.log(`${beePair.uploaderBee.url} uploaded ${bytes} bytes to ${reference}`)
+  const randomBytes = randomByteArray(bytes, seed)
+  const reference = await beePair.uploaderBee.uploadData(beePair.uploaderStamp, randomBytes)
+  console.log(`${beePair.uploaderBee.url} uploaded ${bytes} bytes to ${reference}`)
 }
 
 /**
@@ -63,14 +63,14 @@ async function uploadRandomBytes(beePair, seed = 500, bytes = 1024 * 4 * 400) {
  * @param {BeePair[]} beePairs
  */
 async function genTrafficOnOpenPorts(beePairs) {
-    const promises = beePairs.map(beePair => {
-        return uploadRandomBytes(beePair, Date.now())
-    })
-    await Promise.all(promises)
+  const promises = beePairs.map(beePair => {
+    return uploadRandomBytes(beePair, Date.now())
+  })
+  await Promise.all(promises)
 }
 
 function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms))
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 /**
@@ -84,60 +84,58 @@ function sleep(ms) {
  * @param {number} minCheques
  */
 async function genTrafficLoop(hosts, minCheques) {
-    const promises = hosts.map(async host => {
-        const [chequeReceiverBeeDebugUrl, uploaderBeeUrl, uploaderBeeDebugUrl] = host.split(';')
-        const chequeReceiverBeeDebug = new BeeDebug(chequeReceiverBeeDebugUrl)
-        const uploaderBee = new Bee(uploaderBeeUrl)
-        const uploaderBeeDebug = new BeeDebug(uploaderBeeDebugUrl)
+  const promises = hosts.map(async host => {
+    const [chequeReceiverBeeDebugUrl, uploaderBeeUrl, uploaderBeeDebugUrl] = host.split(';')
+    const chequeReceiverBeeDebug = new BeeDebug(chequeReceiverBeeDebugUrl)
+    const uploaderBee = new Bee(uploaderBeeUrl)
+    const uploaderBeeDebug = new BeeDebug(uploaderBeeDebugUrl)
 
-        console.log(`Creating postage stamp on ${uploaderBeeDebugUrl}...`)
-        const postageBatchId = await uploaderBeeDebug.createPostageBatch(POSTAGE_STAMPS_AMOUNT, POSTAGE_STAMPS_DEPTH)
-        console.log(`Generated ${postageBatchId} postage stamp on ${uploaderBeeDebugUrl}...`)
+    console.log(`Creating postage stamp on ${uploaderBeeDebugUrl}...`)
+    const postageBatchId = await uploaderBeeDebug.createPostageBatch(POSTAGE_STAMPS_AMOUNT, POSTAGE_STAMPS_DEPTH)
+    console.log(`Generated ${postageBatchId} postage stamp on ${uploaderBeeDebugUrl}...`)
 
-        return new BeePair(chequeReceiverBeeDebug, uploaderBee, uploaderBeeDebug, postageBatchId)
-    })
+    return new BeePair(chequeReceiverBeeDebug, uploaderBee, uploaderBeeDebug, postageBatchId)
+  })
 
-    const bees = await Promise.all(promises)
+  const bees = await Promise.all(promises)
 
-    console.log(`wait 11 secs (>10 block time) before postage stamp usages`)
-    await sleep(11 * 1000)
+  console.log(`wait 11 secs (>10 block time) before postage stamp usages`)
+  await sleep(11 * 1000)
 
-    while (true) {
-        await genTrafficOnOpenPorts(bees)
+  while (true) {
+    await genTrafficOnOpenPorts(bees)
 
-        if (!isNaN(minCheques)) {
-            const beesUncashedCheques = []
-            for (const beePair of bees) {
-                const { chequeReceiverBeeDebug } = beePair
-                const { lastcheques } = await chequeReceiverBeeDebug.getLastCheques()
-                const incomingCheques = lastcheques.filter(cheque => !!cheque.lastreceived)
+    if (!isNaN(minCheques)) {
+      const beesUncashedCheques = []
+      for (const beePair of bees) {
+        const { chequeReceiverBeeDebug } = beePair
+        const { lastcheques } = await chequeReceiverBeeDebug.getLastCheques()
+        const incomingCheques = lastcheques.filter(cheque => !!cheque.lastreceived)
 
-                const uncashedCheques = []
-                const lastCashOutPromises = incomingCheques.map(({ peer }) =>
-                    chequeReceiverBeeDebug.getLastCashoutAction(peer)
-                )
-                const lastCashOuts = await Promise.all(lastCashOutPromises)
-                for (const [index, lastCashOut] of lastCashOuts.entries()) {
-                    if (BigInt(lastCashOut.uncashedAmount) > 0) {
-                        uncashedCheques.push(incomingCheques[index])
-                    }
-                }
-
-                beesUncashedCheques.push(uncashedCheques)
-            }
-            if (beesUncashedCheques.every(uncashedCheques => uncashedCheques.length >= minCheques)) {
-                console.log(`Generated at least ${minCheques} for every node on the given Debug API endpoints`)
-                break
-            } else {
-                console.log(
-                    `There is not enough uncashed cheques on Bee node(s)`,
-                    beesUncashedCheques.map(beeCheques => beeCheques.length)
-                )
-            }
+        const uncashedCheques = []
+        const lastCashOutPromises = incomingCheques.map(({ peer }) => chequeReceiverBeeDebug.getLastCashoutAction(peer))
+        const lastCashOuts = await Promise.all(lastCashOutPromises)
+        for (const [index, lastCashOut] of lastCashOuts.entries()) {
+          if (BigInt(lastCashOut.uncashedAmount) > 0) {
+            uncashedCheques.push(incomingCheques[index])
+          }
         }
 
-        await sleep(SLEEP_BETWEEN_UPLOADS_MS)
+        beesUncashedCheques.push(uncashedCheques)
+      }
+      if (beesUncashedCheques.every(uncashedCheques => uncashedCheques.length >= minCheques)) {
+        console.log(`Generated at least ${minCheques} for every node on the given Debug API endpoints`)
+        break
+      } else {
+        console.log(
+          `There is not enough uncashed cheques on Bee node(s)`,
+          beesUncashedCheques.map(beeCheques => beeCheques.length),
+        )
+      }
     }
+
+    await sleep(SLEEP_BETWEEN_UPLOADS_MS)
+  }
 }
 
 let inputArray = process.argv.slice(2)
@@ -146,7 +144,7 @@ let inputArray = process.argv.slice(2)
 let minCheques = parseInt(inputArray[0])
 let hosts = inputArray.slice(1)
 if (hosts.length === 0) {
-    hosts = ['http://localhost:1635;http://localhost:11633;http://localhost:11635']
+  hosts = ['http://localhost:1635;http://localhost:11633;http://localhost:11635']
 }
 
 genTrafficLoop(hosts, minCheques)
