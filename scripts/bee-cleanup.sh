@@ -13,6 +13,9 @@ do
   sudo rm -rf "$BEE_DIR_PATH/statestore"
 done
 
+echo "Removing stopped Bee Docker containers..."
+docker container prune -f
+
 echo "Removing built Bee Docker images..."
 
 BEE_VERSION=$("$MY_PATH/utils/build-image-tag.sh" get)

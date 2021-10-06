@@ -12,9 +12,8 @@
     "gen:traffic": "node ./scripts/gen-traffic.js"
   },
   "dependencies": {
-    "@ethersphere/bee-js": "0.12.0",
+    "@ethersphere/bee-js": "1.2.1",
     "@openzeppelin/contracts": "^3.1.0",
-    "axios": "^0.20.0",
     "truffle": "^5.3.5"
   },
   "keywords": [

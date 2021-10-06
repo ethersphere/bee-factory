@@ -1,5 +1,19 @@
-const axios = require('axios').default;
-const { Bee, BeeDebug } = require('@ethersphere/bee-js');
+const { Bee, BeeDebug } = require('@ethersphere/bee-js')
+
+class BeePair {
+  /**
+   * @param {BeeDebug} chequeReceiverBeeDebug
+   * @param {Bee} uploaderBee
+   * @param {BeeDebug} uploaderBeeDebug
+   * @param {string} uploaderStamp
+   */
+  constructor(chequeReceiverBeeDebug, uploaderBee, uploaderBeeDebug, uploaderStamp) {
+    this.chequeReceiverBeeDebug = chequeReceiverBeeDebug
+    this.uploaderBee = uploaderBee
+    this.uploaderBeeDebug = uploaderBeeDebug
+    this.uploaderStamp = uploaderStamp
+  }
+}
 
 const SLEEP_BETWEEN_UPLOADS_MS = 1000
 const POSTAGE_STAMPS_AMOUNT = '10000'
@@ -34,97 +48,103 @@ function randomByteArray(length, seed = 500) {
   return buf
 }
 
-async function trafficGen(bee, postageBatchId, seed = 500, bytes = 1024 * 4 * 400) {
+/**
+ * @param {BeePair} beePair
+ */
+async function uploadRandomBytes(beePair, seed = 500, bytes = 1024 * 4 * 400) {
   const randomBytes = randomByteArray(bytes, seed)
-  const ref = await bee.uploadData(postageBatchId, randomBytes)
-  console.log(`Generated ${bytes} bytes traffic, the random data's root reference: ${ref}`)
+  const reference = await beePair.uploaderBee.uploadData(beePair.uploaderStamp, randomBytes)
+  console.log(`${beePair.uploaderBee.url} uploaded ${bytes} bytes to ${reference}`)
 }
 
 /**
  * Generate traffic on Bee node(s)
- * 
- * @param bees Array of Bee instances and postage batches where the random generated data will be sent to.
- */ 
-async function genTrafficOnOpenPorts(bees) {
-  const promises = bees.map(({bee, postageBatchId}) => {
-    console.log(`Generate Swarm Chunk traffic on ${bee.url}...`)
-    return trafficGen(bee, postageBatchId, new Date().getTime())
+ *
+ * @param {BeePair[]} beePairs
+ */
+async function genTrafficOnOpenPorts(beePairs) {
+  const promises = beePairs.map(beePair => {
+    return uploadRandomBytes(beePair, Date.now())
   })
   await Promise.all(promises)
 }
 
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 /**
- * 
+ *
  * Generates cheques on the given Bee API EP
- * 
+ *
  * The hosts parameter has to be assimetric in the API;DEBUG_API paired string
- * because on the API EP the data will be generated, so the cheques should be 
- * 
- * @param {string[]} hosts API;DEBUG_API URL strings of the target Bee (e.g. http://localhost:1633;http://localhost:1635)
- * @param {number} minCheques 
+ * because on the API EP the data will be generated, so the cheques should be
+ *
+ * @param {string[]} hosts API;DEBUG_API URL strings of the target Bee (e.g. http://localhost:1635;http://localhost:11633;http://localhost:11635)
+ * @param {number} minCheques
  */
 async function genTrafficLoop(hosts, minCheques) {
-  const promises = hosts.map(async (host) => {
-    const [ beeApiUrl,  beeDebugApiUrl ] = host.split(';')
-    const bee = new Bee(beeApiUrl)
-    const beeDebug = new BeeDebug(beeDebugApiUrl)
+  const promises = hosts.map(async host => {
+    const [chequeReceiverBeeDebugUrl, uploaderBeeUrl, uploaderBeeDebugUrl] = host.split(';')
+    const chequeReceiverBeeDebug = new BeeDebug(chequeReceiverBeeDebugUrl)
+    const uploaderBee = new Bee(uploaderBeeUrl)
+    const uploaderBeeDebug = new BeeDebug(uploaderBeeDebugUrl)
 
-    console.log(`Create postage stamp on ${beeApiUrl}...`)
-    const postageBatchId = await bee.createPostageBatch(POSTAGE_STAMPS_AMOUNT, POSTAGE_STAMPS_DEPTH)
-    console.log(`Generated ${postageBatchId} postage stamp on ${beeApiUrl}...`)
+    console.log(`Creating postage stamp on ${uploaderBeeDebugUrl}...`)
+    const postageBatchId = await uploaderBeeDebug.createPostageBatch(POSTAGE_STAMPS_AMOUNT, POSTAGE_STAMPS_DEPTH)
+    console.log(`Generated ${postageBatchId} postage stamp on ${uploaderBeeDebugUrl}...`)
 
-    return {bee, beeDebug, postageBatchId}
+    return new BeePair(chequeReceiverBeeDebug, uploaderBee, uploaderBeeDebug, postageBatchId)
   })
 
   const bees = await Promise.all(promises)
 
   console.log(`wait 11 secs (>10 block time) before postage stamp usages`)
-  await sleep(11*1000)
+  await sleep(11 * 1000)
 
-  while(true) {
+  while (true) {
     await genTrafficOnOpenPorts(bees)
-    
-    if(!isNaN(minCheques)) {
+
+    if (!isNaN(minCheques)) {
       const beesUncashedCheques = []
-      for(const bee of bees) {
-        const beeDebug = bee.beeDebug
-        const { lastcheques } = await beeDebug.getLastCheques()
+      for (const beePair of bees) {
+        const { chequeReceiverBeeDebug } = beePair
+        const { lastcheques } = await chequeReceiverBeeDebug.getLastCheques()
         const incomingCheques = lastcheques.filter(cheque => !!cheque.lastreceived)
 
         const uncashedCheques = []
-        const lastCashOutPromises = incomingCheques.map(({ peer }) => beeDebug.getLastCashoutAction(peer))
+        const lastCashOutPromises = incomingCheques.map(({ peer }) => chequeReceiverBeeDebug.getLastCashoutAction(peer))
         const lastCashOuts = await Promise.all(lastCashOutPromises)
-        for(const [index, lastCashOut] of lastCashOuts.entries()) {
-          if(BigInt(lastCashOut.uncashedAmount) > 0) {
+        for (const [index, lastCashOut] of lastCashOuts.entries()) {
+          if (BigInt(lastCashOut.uncashedAmount) > 0) {
             uncashedCheques.push(incomingCheques[index])
           }
         }
-        
+
         beesUncashedCheques.push(uncashedCheques)
       }
-      if(beesUncashedCheques.every(uncashedCheques => uncashedCheques.length >= minCheques)) {
-        console.log(`Generated at least ${minCheques} for every node on the given Debug API endpoints`,)
+      if (beesUncashedCheques.every(uncashedCheques => uncashedCheques.length >= minCheques)) {
+        console.log(`Generated at least ${minCheques} for every node on the given Debug API endpoints`)
         break
       } else {
-        console.log(`There is not enough uncashed cheques on Bee node(s)`, beesUncashedCheques.map(beeCheques => beeCheques.length))
+        console.log(
+          `There is not enough uncashed cheques on Bee node(s)`,
+          beesUncashedCheques.map(beeCheques => beeCheques.length),
+        )
       }
     }
-  
+
     await sleep(SLEEP_BETWEEN_UPLOADS_MS)
   }
 }
 
 let inputArray = process.argv.slice(2)
-// if there is no related input to the minimum required cheques count, 
+// if there is no related input to the minimum required cheques count,
 // then the traffic generation will go infinitely
 let minCheques = parseInt(inputArray[0])
 let hosts = inputArray.slice(1)
-if(hosts.length === 0) {
-  hosts = [ 'http://localhost:1633;http://localhost:11635' ]
+if (hosts.length === 0) {
+  hosts = ['http://localhost:1635;http://localhost:11633;http://localhost:11635']
 }
 
 genTrafficLoop(hosts, minCheques)
