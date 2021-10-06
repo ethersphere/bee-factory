@@ -80,7 +80,7 @@ function sleep(ms) {
  * The hosts parameter has to be assimetric in the API;DEBUG_API paired string
  * because on the API EP the data will be generated, so the cheques should be
  *
- * @param {string[]} hosts API;DEBUG_API URL strings of the target Bee (e.g. http://localhost:1633;http://localhost:1635)
+ * @param {string[]} hosts API;DEBUG_API URL strings of the target Bee (e.g. http://localhost:1635;http://localhost:11633;http://localhost:11635)
  * @param {number} minCheques
  */
 async function genTrafficLoop(hosts, minCheques) {
