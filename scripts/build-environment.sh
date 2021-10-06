@@ -117,7 +117,7 @@ if $GEN_TRAFFIC ; then
     "$MY_PATH/bee.sh" start --workers=$SUPPORTED_WORKER_N --detach
     echo "Generating traffic on Bee node $GEN_TRAFFIC_UPLOAD_NODE"
     echo "Run traffic generation until $CHEQUES_COUNT incoming cheques will arrive to node under Debug API $GEN_TRAFFIC_CHECKER_NODE_DEBUG"
-    npm run gen:traffic -- "$CHEQUES_COUNT" "$GEN_TRAFFIC_CHECKER_NODE_DEBUG;$GEN_TRAFFIC_UPLOADER_NODE;$GEN_TRAFFIC_UPLOADER_NODE_DEBUG"
+    npm run gen:traffic -- "$CHEQUES_COUNT" "$GEN_TRAFFIC_CHECKER_NODE_DEBUG;$GEN_TRAFFIC_UPLOAD_NODE;$GEN_TRAFFIC_UPLOAD_NODE_DEBUG"
     echo "traffic has been generated, stop nodes before commit..."
     "$MY_PATH/bee.sh" stop
     docker container prune -f
