@@ -50,9 +50,9 @@ MY_PATH=$( cd "$MY_PATH" && pwd )
 COMMIT_HASH=HEAD
 BUILD_BASE_BEE=false
 GEN_TRAFFIC=false
-GEN_TRAFFIC_UPLOAD_NODE="http://localhost:1633"
-GEN_TRAFFIC_UPLOAD_NODE_DEBUG="http://localhost:1635"
-GEN_TRAFFIC_CHECKER_NODE_DEBUG="http://localhost:11635"
+GEN_TRAFFIC_CHECKER_NODE_DEBUG="http://localhost:1635"
+GEN_TRAFFIC_UPLOAD_NODE="http://localhost:11633"
+GEN_TRAFFIC_UPLOAD_NODE_DEBUG="http://localhost:11635"
 CHEQUES_COUNT=1
 # Bee version here means the base bee version on which the images will be built
 BEE_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BEE_VERSION)
