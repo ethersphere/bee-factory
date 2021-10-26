@@ -48,9 +48,17 @@ queen_failure() {
     exit 1
 }
 
+check_queen_is_running() {
+    QUEEN_RUNNING=$(docker container inspect -f "{{.State.Running}}" $QUEEN_CONTAINER_NAME)
+    if [ "$QUEEN_RUNNING" == 'false' ] ; then
+        echo "Queen container has been stopped... stop environment start process..."
+        queen_failure
+    fi
+}
+
 fetch_queen_underlay_addr() {
     if [[ -n "$QUEEN_UNDERLAY_ADDRESS" ]] ; then return; fi
-
+    check_queen_is_running
     ELAPSED_TIME=0
     WAITING_TIME=5
     # Wait 2 mins for queen start
@@ -271,6 +279,7 @@ ELAPSED_TIME=0
 WAITING_TIME=2
 TIMEOUT=$((2*30*WAITING_TIME))
 while (( TIMEOUT > ELAPSED_TIME )) ; do
+    check_queen_is_running
     COUNT=$(count_connected_peers)
     [[ $COUNT < $WORKERS ]] || break
     echo "Only $COUNT peers have been connected to the Queen Bee node yet. Waiting until $WORKERS"

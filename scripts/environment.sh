@@ -113,7 +113,12 @@ else
 fi
 
 # Wait for blockchain service initializes
-sleep 5
+while : ; do
+    CHAINID=$(curl -s -X POST -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","method":"eth_chainId","id":1}' http://localhost:9545 | grep "0xfb4")
+    [[ "$CHAINID" != '{"id":1,"jsonrpc":"2.0","result":"0xfb4"}' ]] || break
+    echo "waiting for blockchain service is up..."
+    sleep 3
+done
 
 # Build up bee.sh parameters
 BEE_SH_ARGUMENTS="--workers=$WORKERS --own-image --port-maps=$PORT_MAPS --hostname=$HOSTNAME"
