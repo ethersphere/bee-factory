@@ -43,7 +43,7 @@ jobs:
 
       - name: Setup env. variables
         run: |
-        if [[ "${{ github.event_name }}" == "build-images" ]]; then
+        if [[ "${{ github.event_name }}" == "repository_dispatch" && "${{ github.event.action }}"== "build-images" ]]; then
           echo "BEE_VERSION=${{ github.event.client_payload.tag }}" >> $GITHUB_ENV
           echo "BUILD_IMAGE=true" >> $GITHUB_ENV
           echo "COMMIT_VERSION_TAG=true" >> $GITHUB_ENV
@@ -58,7 +58,7 @@ jobs:
         fi
 
       - name: Auth to Github Package Docker Registry
-        if: ${{ (github.event.inputs.buildImage == 'true' && success()) || github.event_name == 'build-images' }}
+        if: ${{ ithub.event_name == 'repository_dispatch' || (github.event.inputs.buildImage == 'true' && success())  }}
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login https://docker.pkg.github.com -u ${GITHUB_ACTOR} --password-stdin
 
@@ -77,6 +77,6 @@ jobs:
           npm run build:env -- $BUILD_PARAMS
 
       - name: Publish if it was clicked manually
-        if: ${{ (github.event.inputs.buildImage == 'true' && success()) || github.event_name == 'build-images' }}
+        if: ${{ github.event_name == 'repository_dispatch' || (github.event.inputs.buildImage == 'true' && success()) }}
         run: |
           npm run publish:env
