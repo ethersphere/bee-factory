@@ -74,6 +74,16 @@ jobs:
           npm run build:env -- $BUILD_PARAMS
 
       - name: Publish if required
+        id: publish
         if: ${{ github.event_name == 'repository_dispatch' || (github.event.inputs.buildImage == 'true' && success()) }}
         run: |
           npm run publish:env
+
+      - name: Trigger Bee-js PR creation
+        if: ${{ github.event_name == 'repository_dispatch' || (github.event.inputs.buildImage == 'true' && success()) }}
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.REPO_GHA_PAT }}
+          repository: ethersphere/bee-js
+          event-type: update-bee
+          client-payload: '{"imageVersion": "${{ steps.publish.outputs.bee-version }}"}'

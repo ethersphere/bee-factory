@@ -33,3 +33,9 @@ done
 
 echo "Push Blockchain docker image: $BLOCKCHAIN_IMAGE_NAME"
 docker push "$BLOCKCHAIN_IMAGE_NAME"
+
+# This sets output parameter in Github Actions that
+# is then used to trigger Bee-js PR creation
+if [ $CI == 'true' ]; then
+  echo "::set-output name=bee-version::$BEE_VERSION"
+fi
