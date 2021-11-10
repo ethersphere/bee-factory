@@ -58,7 +58,7 @@ jobs:
         fi
 
       - name: Auth to Github Package Docker Registry
-        if: ${{ ithub.event_name == 'repository_dispatch' || (github.event.inputs.buildImage == 'true' && success())  }}
+        if: ${{ github.event_name == 'repository_dispatch' || (github.event.inputs.buildImage == 'true' && success())  }}
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login https://docker.pkg.github.com -u ${GITHUB_ACTOR} --password-stdin
 
