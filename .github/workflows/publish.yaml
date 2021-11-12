@@ -1,4 +1,6 @@
 on:
+  repository_dispatch:
+    types: [ build-images ]
   workflow_dispatch:
     inputs:
       buildImage:
@@ -25,10 +27,10 @@ on:
 
 env:
   BEE_IMAGE_PREFIX: 'docker.pkg.github.com/ethersphere/bee-factory'
-  COMMIT_VERSION_TAG: ${{ github.event.inputs.commitVersionTag }}
-  BEE_VERSION: ${{ github.event.inputs.beeVersion }}
-  BUILD_IMAGE: ${{ github.event.inputs.beeVersionAsCommitHash }}
-  STATE_COMMIT: ${{ github.event.inputs.stateCommit }}
+  BUILD_IMAGE: 'true'
+  COMMIT_VERSION_TAG: 'true'
+  STATE_COMMIT: 'true'
+  BEE_VERSION: '${{ github.event.client_payload.tag }}'
 
 jobs:
   bee-images:
@@ -37,19 +39,29 @@ jobs:
     steps:
       - uses: actions/setup-node@v1
         with:
-          node-version: 15
+          node-version: 16
           registry-url: 'https://registry.npmjs.org'
+
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
+
+      - name: Override inputs from `workflow_dispatch`
+        run: |
+        if [[ '${{ github.event_name }}" == "workflow_dispatch"]]; then
+          echo "BEE_VERSION=${{ github.event.inputs.beeVersion }}" >> $GITHUB_ENV
+          echo "BUILD_IMAGE=${{ github.event.inputs.beeVersionAsCommitHash }}" >> $GITHUB_ENV
+          echo "COMMIT_VERSION_TAG=${{ github.event.inputs.commitVersionTag }}" >> $GITHUB_ENV
+          echo "STATE_COMMIT=${{ github.event.inputs.stateCommit }}" >> $GITHUB_ENV
+        fi
+
       - name: Auth to Github Package Docker Registry
-        if: ${{ github.event.inputs.buildImage == 'true' && success() }}
+        if: ${{ github.event_name == 'repository_dispatch' || (github.event.inputs.buildImage == 'true' && success())  }}
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login https://docker.pkg.github.com -u ${GITHUB_ACTOR} --password-stdin
+
       - name: Install npm deps
-        if: steps.cache-npm.outputs.cache-hit != 'true'
         run: npm ci
+
       - name: Build images
         run: |
           BUILD_PARAMS=""
@@ -60,7 +72,8 @@ jobs:
             BUILD_PARAMS+=" --gen-traffic"
           fi
           npm run build:env -- $BUILD_PARAMS
-      - name: Publish if it was clicked manually
-        if: ${{ github.event.inputs.buildImage == 'true' && success() }}
+
+      - name: Publish if required
+        if: ${{ github.event_name == 'repository_dispatch' || (github.event.inputs.buildImage == 'true' && success()) }}
         run: |
           npm run publish:env
