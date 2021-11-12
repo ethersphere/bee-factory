@@ -73,7 +73,7 @@ jobs:
           fi
           npm run build:env -- $BUILD_PARAMS
 
-      - name: Publish if it was clicked manually
+      - name: Publish if required
         if: ${{ github.event_name == 'repository_dispatch' || (github.event.inputs.buildImage == 'true' && success()) }}
         run: |
           npm run publish:env
