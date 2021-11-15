@@ -47,12 +47,12 @@ jobs:
 
       - name: Override inputs from `workflow_dispatch`
         run: |
-        if [[ '${{ github.event_name }}" == "workflow_dispatch"]]; then
-          echo "BEE_VERSION=${{ github.event.inputs.beeVersion }}" >> $GITHUB_ENV
-          echo "BUILD_IMAGE=${{ github.event.inputs.beeVersionAsCommitHash }}" >> $GITHUB_ENV
-          echo "COMMIT_VERSION_TAG=${{ github.event.inputs.commitVersionTag }}" >> $GITHUB_ENV
-          echo "STATE_COMMIT=${{ github.event.inputs.stateCommit }}" >> $GITHUB_ENV
-        fi
+          if [[ '${{ github.event_name }}" == "workflow_dispatch"]]; then
+            echo "BEE_VERSION=${{ github.event.inputs.beeVersion }}" >> $GITHUB_ENV
+            echo "BUILD_IMAGE=${{ github.event.inputs.beeVersionAsCommitHash }}" >> $GITHUB_ENV
+            echo "COMMIT_VERSION_TAG=${{ github.event.inputs.commitVersionTag }}" >> $GITHUB_ENV
+            echo "STATE_COMMIT=${{ github.event.inputs.stateCommit }}" >> $GITHUB_ENV
+          fi
 
       - name: Auth to Github Package Docker Registry
         if: ${{ github.event_name == 'repository_dispatch' || (github.event.inputs.buildImage == 'true' && success())  }}
