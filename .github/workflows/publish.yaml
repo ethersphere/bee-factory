@@ -80,7 +80,7 @@ jobs:
           npm run publish:env
 
       - name: Trigger Bee-js PR creation
-        if: ${{ github.event_name == 'repository_dispatch' || (github.event.inputs.buildImage == 'true' && success()) }}
+        if: ${{ github.event_name == 'repository_dispatch' }}
         uses: peter-evans/repository-dispatch@v1
         with:
           token: ${{ secrets.REPO_GHA_PAT }}
