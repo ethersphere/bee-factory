@@ -47,7 +47,7 @@ jobs:
 
       - name: Override inputs from `workflow_dispatch`
         run: |
-          if [[ '${{ github.event_name }}" == "workflow_dispatch"]]; then
+          if [[ "${{ github.event_name }}" == "workflow_dispatch"]]; then
             echo "BEE_VERSION=${{ github.event.inputs.beeVersion }}" >> $GITHUB_ENV
             echo "BUILD_IMAGE=${{ github.event.inputs.beeVersionAsCommitHash }}" >> $GITHUB_ENV
             echo "COMMIT_VERSION_TAG=${{ github.event.inputs.commitVersionTag }}" >> $GITHUB_ENV
