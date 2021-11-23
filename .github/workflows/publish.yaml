@@ -27,7 +27,7 @@ on:
 
 env:
   BEE_IMAGE_PREFIX: 'docker.pkg.github.com/ethersphere/bee-factory'
-  BUILD_IMAGE: 'true'
+  BUILD_IMAGE: 'false'
   COMMIT_VERSION_TAG: 'true'
   STATE_COMMIT: 'true'
   BEE_VERSION: '${{ github.event.client_payload.tag }}'
