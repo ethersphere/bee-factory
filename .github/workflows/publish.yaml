@@ -52,9 +52,9 @@ jobs:
             echo "BUILD_IMAGE=${{ github.event.inputs.beeVersionAsCommitHash }}" >> $GITHUB_ENV
             echo "COMMIT_VERSION_TAG=${{ github.event.inputs.commitVersionTag }}" >> $GITHUB_ENV
             echo "STATE_COMMIT=${{ github.event.inputs.stateCommit }}" >> $GITHUB_ENV
+          else
+            echo "BEE_VERSION=${BEE_VERSION/v}" >> $GITHUB_ENV
           fi
-
-          echo "BEE_VERSION=${BEE_VERSION/v}" >> $GITHUB_ENV
 
       - name: Auth to Github Package Docker Registry
         if: ${{ github.event_name == 'repository_dispatch' || (github.event.inputs.buildImage == 'true' && success())  }}
