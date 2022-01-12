@@ -8,6 +8,7 @@ COMMANDS:
     stop                        stop Bee cluster
 PARAMETERS:
     --ephemeral                 create ephemeral container for bee-client. Data won't be persisted.
+    --restrict(=string)         turns on Restricted API support. If string is given then it uses it as the main password otherwise 'SwarmToTheMoon' is used
     --workers=number            all Bee nodes in the test environment. Default is 4.
     --detach                    It will not log the output of Queen node at the end of the process.
     --port-maps=number          map ports of the cluster nodes to the hosting machine in the following manner:
@@ -40,6 +41,8 @@ BLOCKCHAIN_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BLOCKCHAIN_VERSION)
 
 # Init variables
 EPHEMERAL=false
+RESTRICTED=false
+RESTRICTED_PASSWORD="SwarmToTheMoon"
 WORKERS=4
 LOG=true
 SWARM_BLOCKCHAIN_NAME="$BEE_ENV_PREFIX-blockchain"
@@ -86,6 +89,13 @@ do
         HOSTNAME="${1#*=}"
         shift 1
         ;;
+        --restrict*)
+        RESTRICTED=true
+        if [ "${1#*=}" != "--restrict" ] ; then
+          RESTRICTED_PASSWORD="${1#*=}"
+        fi
+        shift 1
+        ;;
         --help)
         usage
         ;;
@@ -124,6 +134,9 @@ done
 BEE_SH_ARGUMENTS="--workers=$WORKERS --own-image --port-maps=$PORT_MAPS --hostname=$HOSTNAME"
 if $EPHEMERAL ; then
     BEE_SH_ARGUMENTS="$BEE_SH_ARGUMENTS --ephemeral"
+fi
+if $RESTRICTED ; then
+    BEE_SH_ARGUMENTS="$BEE_SH_ARGUMENTS --restrict=$RESTRICTED_PASSWORD"
 fi
 if ! $LOG ; then
     BEE_SH_ARGUMENTS="$BEE_SH_ARGUMENTS --detach"
