@@ -212,7 +212,7 @@ if [ -z "$QUEEN_CONTAINER_IN_DOCKER" ] || $EPHEMERAL ; then
     fi
 
     echo "start Bee Queen process"
-    if [ $RESTRICTED=="true" ]; then
+    if [ $RESTRICTED == "true" ]; then
       echo "Enabled Restricted API with password: $RESTRICTED_PASSWORD"
     fi
     docker run \
@@ -301,11 +301,11 @@ RESTRICTED_TOKEN=""
 while (( TIMEOUT > ELAPSED_TIME )) ; do
     check_queen_is_running
     if [ $RESTRICTED=="true" -a -z $RESTRICTED_TOKEN ]; then
-      RESTRICTED_TOKEN=$(get_token $RESTRICTED_PASSWORD)
+      RESTRICTED_TOKEN=$(get_token "$RESTRICTED_PASSWORD")
       echo "Fetched Bearer token: $RESTRICTED_TOKEN"
     fi;
 
-    COUNT=$(count_connected_peers $RESTRICTED_TOKEN)
+    COUNT=$(count_connected_peers "$RESTRICTED_TOKEN")
     [[ $COUNT < $WORKERS ]] || break
     echo "Only $COUNT peers have been connected to the Queen Bee node yet. Waiting until $WORKERS"
     ELAPSED_TIME=$((ELAPSED_TIME+WAITING_TIME))
