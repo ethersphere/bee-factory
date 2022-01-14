@@ -300,7 +300,7 @@ TIMEOUT=$((2*30*WAITING_TIME))
 RESTRICTED_TOKEN=""
 while (( TIMEOUT > ELAPSED_TIME )) ; do
     check_queen_is_running
-    if [ $RESTRICTED=="true" -a -z $RESTRICTED_TOKEN ]; then
+    if [ $RESTRICTED == "true" ] && [ -z "$RESTRICTED_TOKEN" ]; then
       RESTRICTED_TOKEN=$(get_token "$RESTRICTED_PASSWORD")
       echo "Fetched Bearer token: $RESTRICTED_TOKEN"
     fi;
