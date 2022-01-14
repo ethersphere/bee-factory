@@ -10,6 +10,7 @@ COMMANDS:
     start                       create Bee cluster with the given parameters
     stop                        stop Bee cluster
 PARAMETERS:
+    --restrict=string           turns on Restricted API support with given string as password
     --ephemeral                 create ephemeral container for bee-client. Data won't be persisted.
     --workers=number            all Bee nodes in the test environment. Default is 4.
     --port-maps=number          map ports of the cluster nodes to the hosting machine in the following manner:
@@ -56,6 +57,10 @@ check_queen_is_running() {
     fi
 }
 
+get_token() {
+  echo "$(curl -X POST -s "http://$HOSTNAME:1633/auth" -u "_:$1" -d '{"role":"maintainer","expiry":400}' | python -c 'import json,sys; obj=json.load(sys.stdin); print(obj["key"]);')"
+}
+
 fetch_queen_underlay_addr() {
     if [[ -n "$QUEEN_UNDERLAY_ADDRESS" ]] ; then return; fi
     check_queen_is_running
@@ -86,7 +91,7 @@ log_queen() {
 }
 
 count_connected_peers() {
-    COUNT=$( (curl -s "http://$HOSTNAME:1635/peers" | python -c 'import json,sys; obj=json.load(sys.stdin); print (len(obj["peers"]));') || echo 0 )
+    COUNT=$( (curl -s "http://$HOSTNAME:1635/peers" -H "Authorization: Bearer $1" | python -c 'import json,sys; obj=json.load(sys.stdin); print (len(obj["peers"]));') || echo 0 )
 
     echo "$COUNT"
 }
@@ -102,6 +107,9 @@ BEE_ENV_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_ENV_PREFIX)
 EPHEMERAL=false
 WORKERS=4
 LOG=true
+RESTRICTED=false
+RESTRICTED_PASSWORD=""
+RESTRICTED_PASSWORD_HASH=""
 QUEEN_CONTAINER_NAME="$BEE_ENV_PREFIX-queen"
 WORKER_CONTAINER_NAME="$BEE_ENV_PREFIX-worker"
 SWARM_BLOCKCHAIN_NAME="$BEE_ENV_PREFIX-blockchain"
@@ -147,6 +155,12 @@ do
         ;;
         --password=*)
         BEE_PASSWORD="${1#*=}"
+        shift 1
+        ;;
+        --restrict=*)
+        RESTRICTED="true"
+        RESTRICTED_PASSWORD="${1#*=}"
+        RESTRICTED_PASSWORD_HASH=$(htpasswd -bnBC 10 "" $RESTRICTED_PASSWORD | tr -d ':\n')
         shift 1
         ;;
         --version=*)
@@ -198,6 +212,9 @@ if [ -z "$QUEEN_CONTAINER_IN_DOCKER" ] || $EPHEMERAL ; then
     fi
 
     echo "start Bee Queen process"
+    if [ $RESTRICTED == "true" ]; then
+      echo "Enabled Restricted API with password: $RESTRICTED_PASSWORD"
+    fi
     docker run \
       -d \
       --network="$NETWORK" \
@@ -206,6 +223,8 @@ if [ -z "$QUEEN_CONTAINER_IN_DOCKER" ] || $EPHEMERAL ; then
       $EXTRA_QUEEN_PARAMS \
       $DOCKER_IMAGE \
         start \
+        --admin-password="$RESTRICTED_PASSWORD_HASH" \
+        --restricted="$RESTRICTED" \
         --warmup-time=0 \
         --password "$BEE_PASSWORD" \
         --bootnode="$QUEEN_BOOTNODE" \
@@ -278,9 +297,15 @@ echo "Check whether the queen node has been connected to every worker..."
 ELAPSED_TIME=0
 WAITING_TIME=2
 TIMEOUT=$((2*30*WAITING_TIME))
+RESTRICTED_TOKEN=""
 while (( TIMEOUT > ELAPSED_TIME )) ; do
     check_queen_is_running
-    COUNT=$(count_connected_peers)
+    if [ $RESTRICTED == "true" ] && [ -z "$RESTRICTED_TOKEN" ]; then
+      RESTRICTED_TOKEN=$(get_token "$RESTRICTED_PASSWORD")
+      echo "Fetched Bearer token: $RESTRICTED_TOKEN"
+    fi;
+
+    COUNT=$(count_connected_peers "$RESTRICTED_TOKEN")
     [[ $COUNT < $WORKERS ]] || break
     echo "Only $COUNT peers have been connected to the Queen Bee node yet. Waiting until $WORKERS"
     ELAPSED_TIME=$((ELAPSED_TIME+WAITING_TIME))

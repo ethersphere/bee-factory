@@ -86,6 +86,13 @@ start the Bee cluster
 ./scripts/environment.sh start
 ```
 
+### Restricted API
+
+If you want to enable permission check feature of Bee on the API endpoints you can use `--restrict` flag. This will
+use default password `SwarmToTheMoon` or if you want you can pass your own password as `--restrict=someOtherPassword`.
+
+This feature requires to have `htpasswd` command available which is part of the `apache2-utils` package.
+
 ### Pull images
 
 Bee Factory can build images for CIs, but it is also possible to pull image to your computer as well.
