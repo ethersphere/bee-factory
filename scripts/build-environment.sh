@@ -118,7 +118,14 @@ if $GEN_TRAFFIC ; then
     echo "Generating traffic on Bee node $GEN_TRAFFIC_UPLOAD_NODE"
     echo "Run traffic generation until $CHEQUES_COUNT incoming cheques will arrive to node under Debug API $GEN_TRAFFIC_CHECKER_NODE_DEBUG"
     npm run gen:traffic -- "$CHEQUES_COUNT" "$GEN_TRAFFIC_CHECKER_NODE_DEBUG;$GEN_TRAFFIC_UPLOAD_NODE;$GEN_TRAFFIC_UPLOAD_NODE_DEBUG"
-    echo "traffic has been generated, stop nodes before commit..."
+    echo "traffic has been generated"
+
+    # This sets output parameter in Github Actions that
+    # is then used to trigger Bee-js PR creation
+    if [ "$CI" == 'true' ]; then
+      npm run setApiVersions
+    fi
+
     "$MY_PATH/bee.sh" stop
     docker container prune -f
 fi

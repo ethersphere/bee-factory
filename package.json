@@ -9,10 +9,11 @@
     "build:env": "./scripts/build-environment.sh",
     "publish:env": "./scripts/publish-environment.sh",
     "run:env": "./scripts/environment.sh",
+    "setApiVersions": "node ./src/setApiVersions.js",
     "gen:traffic": "node ./scripts/gen-traffic.js"
   },
   "dependencies": {
-    "@ethersphere/bee-js": "1.2.1",
+    "@ethersphere/bee-js": "^3.2.0",
     "@openzeppelin/contracts": "^3.1.0",
     "truffle": "^5.3.5"
   },
