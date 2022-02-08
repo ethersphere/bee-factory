@@ -123,7 +123,7 @@ if $GEN_TRAFFIC ; then
     # This sets output parameter in Github Actions that
     # is then used to trigger Bee-js PR creation
     if [ "$CI" == 'true' ]; then
-      npm run setApiVersions
+      npm run setApiVersions "$GEN_TRAFFIC_CHECKER_NODE_DEBUG"
     fi
 
     "$MY_PATH/bee.sh" stop

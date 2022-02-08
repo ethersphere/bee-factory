@@ -9,6 +9,9 @@ async function setApiVersions (node) {
   const debug = new BeeDebug(node)
   const versions = await debug.getHealth()
 
+  console.log('API version: ', versions.apiVersion)
+  console.log('Debug API version: ', versions.debugApiVersion)
+
   console.log('::set-output name=api-version::', versions.apiVersion)
   console.log('::set-output name=debug-api-version::', versions.debugApiVersion)
 }
