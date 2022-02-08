@@ -100,7 +100,7 @@ done
 # cleanup for start from an empty state
 "$MY_PATH/bee-cleanup.sh"
 
-if $BUILD_BASE_BEE ; then 
+if $BUILD_BASE_BEE ; then
     build_bee
 fi
 "$MY_PATH/network.sh"
@@ -114,7 +114,7 @@ if $GEN_TRAFFIC ; then
     BEE_DIR_PATH="$MY_PATH/bee-data-dirs/"
     sudo chown 999:999 -R "$BEE_DIR_PATH"
     echo "Start Bee nodes so that traffic can be generated and commited to the images"
-    "$MY_PATH/bee.sh" start --workers=$SUPPORTED_WORKER_N --detach
+    "$MY_PATH/bee.sh" start --version="$BEE_VERSION" --workers=$SUPPORTED_WORKER_N --detach
     echo "Generating traffic on Bee node $GEN_TRAFFIC_UPLOAD_NODE"
     echo "Run traffic generation until $CHEQUES_COUNT incoming cheques will arrive to node under Debug API $GEN_TRAFFIC_CHECKER_NODE_DEBUG"
     npm run gen:traffic -- "$CHEQUES_COUNT" "$GEN_TRAFFIC_CHECKER_NODE_DEBUG;$GEN_TRAFFIC_UPLOAD_NODE;$GEN_TRAFFIC_UPLOAD_NODE_DEBUG"
