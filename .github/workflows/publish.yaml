@@ -65,6 +65,7 @@ jobs:
         run: npm ci
 
       - name: Build images
+        id: build
         run: |
           BUILD_PARAMS=""
           if [ $BUILD_IMAGE == 'true' ] ; then
@@ -88,4 +89,4 @@ jobs:
           token: ${{ secrets.REPO_GHA_PAT }}
           repository: ethersphere/bee-js
           event-type: update-bee
-          client-payload: '{"imageVersion": "${{ steps.publish.outputs.bee-version }}"}'
+          client-payload: '{"imageVersion": "${{ steps.publish.outputs.bee-version }}", "apiVersion": "${{ steps.build.outputs.api-version }}", "debugApiVersion": "${{ steps.build.outputs.debug-api-version }}"}'
