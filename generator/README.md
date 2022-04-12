@@ -1,4 +1,4 @@
-# Bee Factory
+# Bee Factory Generator
 This project builds up a test environment with Bee clients and with a test blockchain.
 The created environment is runnable on local machine as well.
 
@@ -68,7 +68,7 @@ OR it is possible to build docker images on a desired state, so that a fresh env
 
 Basically, a full-featured Bee environment has 2 types of Docker image:
 
-- Bee images: Bee clients with pre-defined keys (and optionally including the state which you nodes have in its [data-dirs](scripts/bee-data-dirs))
+- Bee images: Bee clients with pre-defined keys (and optionally including the state which you nodes have in its [data-dirs](bee-data-dirs))
 ```sh
 ./scripts/bee-docker-build.sh
 ```
@@ -77,7 +77,7 @@ Basically, a full-featured Bee environment has 2 types of Docker image:
 ./scripts/blockchain-docker-build.sh
 ```
 
-## Run Environment
+## Index Environment
 
 If you have all Docker images that your [environment file](scripts/.env) requires,
 start the Bee cluster
@@ -104,14 +104,14 @@ docker login docker.pkg.github.com
 ```
 
 it will ask for your _GitHub_ username and for the password. For the latter you can generate a [Personal Access Token](https://github.com/settings/tokens).
-The suggested permissions for the token are `read:org` and `read:packages`. 
+The suggested permissions for the token are `read:org` and `read:packages`.
 
 ## Utilities
 
 It is possible to generate random traffic in your cluster:
 
 ```sh
-$ npm run gen:traffic 
+$ npm run gen:traffic
 ```
 
 The script is in an infinite loop, so if you want to stop the generation you have to terminate it manually in your terminal by pressing `Ctrl^C`.
