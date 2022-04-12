@@ -53,7 +53,7 @@ export async function waitForBlockchain(waitingIterations = 30): Promise<void> {
   throw new TimeoutError('Waiting for blockchain container timed-out')
 }
 
-export async function waitForQueen(verifyQueenIsUp: () => Promise<boolean>, waitingIterations = 40): Promise<string> {
+export async function waitForQueen(verifyQueenIsUp: () => Promise<boolean>, waitingIterations = 120): Promise<string> {
   const beeDebug = new BeeDebug('http://localhost:1635')
 
   for (let i = 0; i < waitingIterations; i++) {
@@ -85,7 +85,7 @@ export async function waitForQueen(verifyQueenIsUp: () => Promise<boolean>, wait
 
 export async function waitForWorkers(
   verifyWorkersAreUp: () => Promise<boolean>,
-  waitingIterations = 40,
+  waitingIterations = 120,
 ): Promise<void> {
   const beeDebug = new BeeDebug('http://localhost:1635')
 
