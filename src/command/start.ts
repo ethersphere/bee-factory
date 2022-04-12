@@ -12,7 +12,7 @@ import { waitForBlockchain, waitForQueen, waitForWorkers } from '../utils/wait'
 import ora from 'ora'
 import { VerbosityLevel } from './root-command/logging'
 
-const DEFAULT_REPO = 'docker.pkg.github.com/ethersphere/bee-factory'
+const DEFAULT_REPO = 'ghcr.io/ethersphere/bee-factory'
 
 export class Start extends RootCommand implements LeafCommand {
   public readonly name = 'start'

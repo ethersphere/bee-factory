@@ -272,9 +272,23 @@ export class Docker {
 
       return container
     }
+
     this.console.info(`Container with name "${name}" not found. Creating new one.`)
 
-    return this.docker.createContainer(createOptions)
+    try {
+      return await this.docker.createContainer(createOptions)
+    } catch (e) {
+      // 404 is Image Not Found ==> pull the image
+      if ((e as DockerError).statusCode !== 404) {
+        throw e
+      }
+
+      this.console.info(`Image ${createOptions.Image} not found. Pulling it.`)
+      const pullStream = await this.docker.pull(createOptions.Image!)
+      await new Promise(res => this.docker.modem.followProgress(pullStream, res))
+
+      return await this.docker.createContainer(createOptions)
+    }
   }
 
   private async findContainer(name: string): Promise<FindResult> {
