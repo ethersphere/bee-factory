@@ -192,8 +192,8 @@ export class Docker {
     }
   }
 
-  public async attachQueenLogging(outputStream: NodeJS.WriteStream): Promise<void> {
-    const { container } = await this.findContainer(this.queenName)
+  public async attachLogging(target: ContainerType, outputStream: NodeJS.WriteStream): Promise<void> {
+    const { container } = await this.findContainer(this.getContainerName(target))
 
     if (!container) {
       throw new Error('Queen container does not exists, even though it should have had!')

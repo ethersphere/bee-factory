@@ -86,7 +86,7 @@ export class Start extends RootCommand implements LeafCommand {
         process.exit(0)
       }
 
-      await docker.attachQueenLogging(process.stdout)
+      await docker.attachLogging(ContainerType.QUEEN, process.stdout)
     }
 
     let queenAddress: string
@@ -180,7 +180,7 @@ export class Start extends RootCommand implements LeafCommand {
     }
 
     if (!this.detach) {
-      await docker.attachQueenLogging(process.stdout)
+      await docker.attachLogging(ContainerType.QUEEN, process.stdout)
 
       // This prevents the program from exiting
       // eslint-disable-next-line @typescript-eslint/no-empty-function
