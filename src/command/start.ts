@@ -91,12 +91,14 @@ export class Start extends RootCommand implements LeafCommand {
 
     let queenAddress: string
 
-    process.once('SIGINT', async () => {
+    process.on('SIGINT', async () => {
       try {
         await docker.stopAll(false)
       } catch (e) {
         this.console.error(`Error: ${e}`)
       }
+
+      process.exit()
     })
 
     const networkSpinner = ora({
