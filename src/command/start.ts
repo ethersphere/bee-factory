@@ -14,6 +14,12 @@ import { VerbosityLevel } from './root-command/logging'
 
 const DEFAULT_REPO = 'ghcr.io/ethersphere/bee-factory'
 
+export const ENV_ENV_PREFIX_KEY = 'FACTORY_ENV_PREFIX'
+const ENV_IMAGE_PREFIX_KEY = 'FACTORY_IMAGE_PREFIX'
+const ENV_REPO_KEY = 'FACTORY_DOCKER_REPO'
+const ENV_DETACH_KEY = 'FACTORY_DETACH'
+const ENV_FRESH_KEY = 'FACTORY_FRESH'
+
 export class Start extends RootCommand implements LeafCommand {
   public readonly name = 'start'
 
@@ -24,7 +30,7 @@ export class Start extends RootCommand implements LeafCommand {
     alias: 'f',
     type: 'boolean',
     description: 'The cluster data will be purged before start',
-    envKey: 'FACTORY_FRESH',
+    envKey: ENV_FRESH_KEY,
     default: false,
   })
   public fresh!: boolean
@@ -34,7 +40,7 @@ export class Start extends RootCommand implements LeafCommand {
     alias: 'd',
     type: 'boolean',
     description: 'Spin up the cluster and exit. No logging is outputted.',
-    envKey: 'FACTORY_DETACH',
+    envKey: ENV_DETACH_KEY,
     default: false,
   })
   public detach!: boolean
@@ -43,7 +49,7 @@ export class Start extends RootCommand implements LeafCommand {
     key: 'repo',
     type: 'string',
     description: 'Docker repo',
-    envKey: 'FACTORY_DOCKER_REPO',
+    envKey: ENV_REPO_KEY,
     default: DEFAULT_REPO,
   })
   public repo!: string
@@ -52,7 +58,7 @@ export class Start extends RootCommand implements LeafCommand {
     key: 'image-prefix',
     type: 'string',
     description: 'Docker image name prefix',
-    envKey: 'FACTORY_IMAGE_PREFIX',
+    envKey: ENV_IMAGE_PREFIX_KEY,
     default: DEFAULT_IMAGE_PREFIX,
   })
   public imagePrefix!: string
@@ -61,7 +67,7 @@ export class Start extends RootCommand implements LeafCommand {
     key: 'env-prefix',
     type: 'string',
     description: "Docker container's names prefix",
-    envKey: 'FACTORY_ENV_PREFIX',
+    envKey: ENV_ENV_PREFIX_KEY,
     default: DEFAULT_ENV_PREFIX,
   })
   public envPrefix!: string
@@ -83,7 +89,7 @@ export class Start extends RootCommand implements LeafCommand {
       this.console.log('All containers are up and running')
 
       if (this.detach) {
-        process.exit(0)
+        return
       }
 
       await docker.attachLogging(ContainerType.QUEEN, process.stdout)
@@ -181,10 +187,6 @@ export class Start extends RootCommand implements LeafCommand {
 
     if (!this.detach) {
       await docker.attachLogging(ContainerType.QUEEN, process.stdout)
-
-      // This prevents the program from exiting
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
-      // setInterval(() => {}, 1000)
     }
   }
 

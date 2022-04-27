@@ -41,7 +41,7 @@ export interface AllStatus {
   worker4: Status
 }
 
-interface DockerError extends Error {
+export interface DockerError extends Error {
   reason: string
   statusCode: number
 }
