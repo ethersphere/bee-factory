@@ -40,7 +40,7 @@ describe('start command', () => {
 
   afterEach(async () => {
     if (testFailed) {
-      await run(['logs queen'])
+      await run(['logs', 'queen'])
     }
 
     await run(['stop'])
