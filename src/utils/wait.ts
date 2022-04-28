@@ -25,6 +25,10 @@ function isAllowedError(e: FetchError): boolean {
     return true
   }
 
+  if (e.message.includes('ECONNRESET')) {
+    return true
+  }
+
   return false
 }
 
@@ -54,7 +58,7 @@ export async function waitForBlockchain(waitingIterations = 30): Promise<void> {
 }
 
 export async function waitForQueen(verifyQueenIsUp: () => Promise<boolean>, waitingIterations = 120): Promise<string> {
-  const beeDebug = new BeeDebug('http://localhost:1635')
+  const beeDebug = new BeeDebug('http://127.0.0.1:1635')
 
   for (let i = 0; i < waitingIterations; i++) {
     try {
@@ -87,7 +91,7 @@ export async function waitForWorkers(
   verifyWorkersAreUp: () => Promise<boolean>,
   waitingIterations = 120,
 ): Promise<void> {
-  const beeDebug = new BeeDebug('http://localhost:1635')
+  const beeDebug = new BeeDebug('http://127.0.0.1:1635')
 
   for (let i = 0; i < waitingIterations; i++) {
     try {
