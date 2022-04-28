@@ -2,12 +2,12 @@ import { Argument, LeafCommand, Option } from 'furious-commander'
 import { RootCommand } from './root-command'
 import { ContainerType, DEFAULT_ENV_PREFIX, DEFAULT_IMAGE_PREFIX, Docker } from '../utils/docker'
 
-export class Log extends RootCommand implements LeafCommand {
-  public readonly name = 'log'
+export class Logs extends RootCommand implements LeafCommand {
+  public readonly name = 'logs'
 
-  public readonly description = `Attach to given Bee node to see its logs.
-
-Valid container's names are: ${Object.values(ContainerType).join(', ')}`
+  public readonly description = `Prints logs for given container. Valid container's names are: ${Object.values(
+    ContainerType,
+  ).join(', ')}`
 
   @Option({
     key: 'image-prefix',
@@ -27,6 +27,23 @@ Valid container's names are: ${Object.values(ContainerType).join(', ')}`
   })
   public envPrefix!: string
 
+  @Option({
+    key: 'follow',
+    alias: 'f',
+    type: 'boolean',
+    description: 'Stays attached to the container and output any new logs.',
+    default: false,
+  })
+  public follow!: boolean
+
+  @Option({
+    key: 'tail',
+    alias: 't',
+    type: 'number',
+    description: 'Prints specified number of last log lines.',
+  })
+  public tail!: number
+
   @Argument({ key: 'container', description: 'Container name as described above', required: true })
   public container!: ContainerType
 
@@ -38,6 +55,6 @@ Valid container's names are: ${Object.values(ContainerType).join(', ')}`
     }
 
     const docker = new Docker(this.console, this.envPrefix, this.imagePrefix)
-    await docker.attachLogging(this.container, process.stdout)
+    await docker.logs(this.container, process.stdout, this.follow, this.tail)
   }
 }

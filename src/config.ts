@@ -2,7 +2,7 @@ import { IOption } from 'furious-commander'
 import PackageJson from '../package.json'
 import { Start } from './command/start'
 import { Stop } from './command/stop'
-import { Log } from './command/log'
+import { Logs } from './command/logs'
 
 export const quiet: IOption<boolean> = {
   key: 'quiet',
@@ -43,4 +43,4 @@ export const version: IOption<boolean> = {
 
 export const optionParameters: IOption<unknown>[] = [quiet, verbose, help, version]
 
-export const rootCommandClasses = [Start, Stop, Log]
+export const rootCommandClasses = [Start, Stop, Logs]

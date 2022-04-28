@@ -11,6 +11,19 @@ import { findContainer, waitForUsablePostageStamp } from '../utils/docker'
 const BLOCKCHAIN_VERSION = '1.2.0'
 const BEE_VERSION = '1.5.1-d0a77598-stateful'
 
+let testFailed = false
+
+function wrapper(fn: () => Promise<unknown>): () => Promise<unknown> {
+  return async () => {
+    try {
+      return await fn()
+    } catch (e) {
+      testFailed = true
+      throw e
+    }
+  }
+}
+
 describe('start command', () => {
   let docker: Dockerode
   let bee: Bee, beeDebug: BeeDebug
@@ -26,6 +39,10 @@ describe('start command', () => {
   })
 
   afterEach(async () => {
+    if (testFailed) {
+      await run(['logs queen'])
+    }
+
     await run(['stop'])
   })
 
@@ -33,19 +50,22 @@ describe('start command', () => {
     await run(['stop', '--rm']) // Cleanup the testing containers
   })
 
-  it('should start cluster', async () => {
-    // As spinning the cluster with --detach the command will exit once the cluster is up and running
-    await run(['start', '--detach', BLOCKCHAIN_VERSION, BEE_VERSION])
+  it(
+    'should start cluster',
+    wrapper(async () => {
+      // As spinning the cluster with --detach the command will exit once the cluster is up and running
+      await run(['start', '--detach', BLOCKCHAIN_VERSION, BEE_VERSION])
 
-    await expect(findContainer(docker, 'queen')).resolves.toBeDefined()
-    await expect(findContainer(docker, 'blockchain')).resolves.toBeDefined()
-    await expect(findContainer(docker, 'worker-1')).resolves.toBeDefined()
-    await expect(findContainer(docker, 'worker-2')).resolves.toBeDefined()
-    await expect(findContainer(docker, 'worker-3')).resolves.toBeDefined()
-    await expect(findContainer(docker, 'worker-4')).resolves.toBeDefined()
+      await expect(findContainer(docker, 'queen')).resolves.toBeDefined()
+      await expect(findContainer(docker, 'blockchain')).resolves.toBeDefined()
+      await expect(findContainer(docker, 'worker-1')).resolves.toBeDefined()
+      await expect(findContainer(docker, 'worker-2')).resolves.toBeDefined()
+      await expect(findContainer(docker, 'worker-3')).resolves.toBeDefined()
+      await expect(findContainer(docker, 'worker-4')).resolves.toBeDefined()
 
-    await expect(beeDebug.getHealth()).resolves.toHaveProperty('status')
-  })
+      await expect(beeDebug.getHealth()).resolves.toHaveProperty('status')
+    }),
+  )
 
   describe('should create docker network', () => {
     beforeAll(async () => {
@@ -61,11 +81,14 @@ describe('start command', () => {
       }
     })
 
-    it('', async () => {
-      await run(['start', '--detach', BLOCKCHAIN_VERSION, BEE_VERSION])
+    it(
+      '',
+      wrapper(async () => {
+        await run(['start', '--detach', BLOCKCHAIN_VERSION, BEE_VERSION])
 
-      expect(docker.getNetwork(`${envPrefix}-network`)).toBeDefined()
-    })
+        expect(docker.getNetwork(`${envPrefix}-network`)).toBeDefined()
+      }),
+    )
   })
 
   describe('should remove containers with --fresh option', () => {
@@ -90,12 +113,15 @@ describe('start command', () => {
       await run(['stop'])
     })
 
-    it('', async () => {
-      console.log('(test) Starting the Bee Factory')
-      await run(['start', '--fresh', '--detach', BLOCKCHAIN_VERSION, BEE_VERSION])
+    it(
+      '',
+      wrapper(async () => {
+        console.log('(test) Starting the Bee Factory')
+        await run(['start', '--fresh', '--detach', BLOCKCHAIN_VERSION, BEE_VERSION])
 
-      console.log('(test) Trying to fetch the data')
-      await expect(bee.downloadData(reference)).rejects.toHaveProperty('status', 404)
-    })
+        console.log('(test) Trying to fetch the data')
+        await expect(bee.downloadData(reference)).rejects.toHaveProperty('status', 404)
+      }),
+    )
   })
 })

@@ -192,15 +192,25 @@ export class Docker {
     }
   }
 
-  public async attachLogging(target: ContainerType, outputStream: NodeJS.WriteStream): Promise<void> {
+  public async logs(
+    target: ContainerType,
+    outputStream: NodeJS.WriteStream,
+    follow = false,
+    tail?: number,
+  ): Promise<void> {
     const { container } = await this.findContainer(this.getContainerName(target))
 
     if (!container) {
       throw new Error('Queen container does not exists, even though it should have had!')
     }
 
-    const logs = await container.logs({ stdout: true, stderr: true, follow: true })
-    logs.pipe(outputStream)
+    const logs = await container.logs({ stdout: true, stderr: true, follow, tail })
+
+    if (!follow) {
+      outputStream.write(logs as unknown as Buffer)
+    } else {
+      logs.pipe(outputStream)
+    }
   }
 
   public async stopAll(allWithPrefix = false, deleteContainers = false): Promise<void> {

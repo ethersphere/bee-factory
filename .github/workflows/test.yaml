@@ -39,4 +39,4 @@ jobs:
         if: steps.cache-npm.outputs.cache-hit != 'true'
         run: npm ci
       - name: Run node tests
-        run: npm test
+        run: npm test -- --bail

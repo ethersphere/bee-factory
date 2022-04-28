@@ -92,7 +92,7 @@ export class Start extends RootCommand implements LeafCommand {
         return
       }
 
-      await docker.attachLogging(ContainerType.QUEEN, process.stdout)
+      await docker.logs(ContainerType.QUEEN, process.stdout)
     }
 
     let queenAddress: string
@@ -186,7 +186,7 @@ export class Start extends RootCommand implements LeafCommand {
     }
 
     if (!this.detach) {
-      await docker.attachLogging(ContainerType.QUEEN, process.stdout)
+      await docker.logs(ContainerType.QUEEN, process.stdout)
     }
   }
 
