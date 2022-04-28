@@ -119,8 +119,7 @@ export class Start extends RootCommand implements LeafCommand {
       networkSpinner.succeed('Network is up')
     } catch (e) {
       networkSpinner.fail(`It was not possible to spawn network!`)
-      this.console.error(`Error: ${e}`)
-      process.exit(1)
+      throw e
     }
 
     const blockchainSpinner = ora({
@@ -137,9 +136,8 @@ export class Start extends RootCommand implements LeafCommand {
       blockchainSpinner.succeed('Blockchain node is up and listening')
     } catch (e) {
       blockchainSpinner.fail(`It was not possible to start blockchain node!`)
-      this.console.error(`Error: ${e}`)
       await this.stopDocker(docker)
-      process.exit(1)
+      throw e
     }
 
     const queenSpinner = ora({
@@ -158,9 +156,8 @@ export class Start extends RootCommand implements LeafCommand {
       queenSpinner.succeed('Queen node is up and listening')
     } catch (e) {
       queenSpinner.fail(`It was not possible to start queen node!`)
-      this.console.error(`Error: ${e}`)
       await this.stopDocker(docker)
-      process.exit(1)
+      throw e
     }
 
     const workerSpinner = ora({
@@ -180,9 +177,8 @@ export class Start extends RootCommand implements LeafCommand {
       workerSpinner.succeed('Worker nodes are up and listening')
     } catch (e) {
       workerSpinner.fail(`It was not possible to start worker nodes!`)
-      this.console.error(`Error: ${e}`)
       await this.stopDocker(docker)
-      process.exit(1)
+      throw e
     }
 
     if (!this.detach) {
