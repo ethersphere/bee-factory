@@ -43,7 +43,7 @@ export class Stop extends RootCommand implements LeafCommand {
       text: 'Stopping all containers...',
       spinner: 'point',
       color: 'yellow',
-      isEnabled: this.verbosity !== VerbosityLevel.Quiet,
+      isSilent: this.verbosity !== VerbosityLevel.Quiet,
     }).start()
 
     await docker.stopAll(true, this.deleteContainers)

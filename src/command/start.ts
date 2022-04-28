@@ -111,7 +111,7 @@ export class Start extends RootCommand implements LeafCommand {
       text: 'Spawning network...',
       spinner: 'point',
       color: 'yellow',
-      isEnabled: this.verbosity !== VerbosityLevel.Quiet,
+      isSilent: this.verbosity !== VerbosityLevel.Quiet,
     }).start()
 
     try {
@@ -126,7 +126,7 @@ export class Start extends RootCommand implements LeafCommand {
       text: 'Starting blockchain node...',
       spinner: 'point',
       color: 'yellow',
-      isEnabled: this.verbosity !== VerbosityLevel.Quiet,
+      isSilent: this.verbosity !== VerbosityLevel.Quiet,
     }).start()
 
     try {
@@ -144,7 +144,7 @@ export class Start extends RootCommand implements LeafCommand {
       text: 'Starting queen Bee node...',
       spinner: 'point',
       color: 'yellow',
-      isEnabled: this.verbosity !== VerbosityLevel.Quiet,
+      isSilent: this.verbosity !== VerbosityLevel.Quiet,
     }).start()
 
     try {
@@ -164,7 +164,7 @@ export class Start extends RootCommand implements LeafCommand {
       text: 'Starting worker Bee nodes...',
       spinner: 'point',
       color: 'yellow',
-      isEnabled: this.verbosity !== VerbosityLevel.Quiet,
+      isSilent: this.verbosity !== VerbosityLevel.Quiet,
     }).start()
 
     try {
@@ -191,7 +191,7 @@ export class Start extends RootCommand implements LeafCommand {
       text: 'Stopping all containers...',
       spinner: 'point',
       color: 'red',
-      isEnabled: this.verbosity !== VerbosityLevel.Quiet,
+      isSilent: this.verbosity !== VerbosityLevel.Quiet,
     }).start()
 
     await docker.stopAll(false)
