@@ -35,7 +35,7 @@ $ npm install -g @ethersphere/bee-factory
 $ bee-factory start --detach 1.2.0 1.5.1-d0a77598-stateful
 
 # This attaches to the Queen container and displays its logs
-$ bee-factory log queen
+$ bee-factory logs queen
 
 # This stops the cluster and keeping the containers so next time they are spinned up the data are kept
 # but data are not persisted across version's bump!
