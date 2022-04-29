@@ -67,6 +67,8 @@ jobs:
       - name: Build images
         id: build
         run: |
+          cd ./generator
+
           BUILD_PARAMS=""
           if [ $BUILD_IMAGE == 'true' ] ; then
             BUILD_PARAMS+=" --build-base-bee --base-bee-commit-hash=$BEE_VERSION"
