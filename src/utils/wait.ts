@@ -21,15 +21,7 @@ function isAllowedError(e: FetchError): boolean {
     return true
   }
 
-  if (e.message.includes('ECONNREFUSED')) {
-    return true
-  }
-
-  if (e.message.includes('ECONNRESET')) {
-    return true
-  }
-
-  return false
+  return ALLOWED_ERRORS.some(substring => e.message.includes(substring))
 }
 
 export async function waitForBlockchain(waitingIterations = 30): Promise<void> {
