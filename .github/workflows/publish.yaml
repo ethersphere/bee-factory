@@ -26,7 +26,7 @@ on:
       - '**'
 
 env:
-  BEE_IMAGE_PREFIX: 'ethersphere/bee-factory'
+  BEE_IMAGE_PREFIX: 'ethersphere'
   BUILD_IMAGE: 'false'
   COMMIT_VERSION_TAG: 'true'
   STATE_COMMIT: 'true'
