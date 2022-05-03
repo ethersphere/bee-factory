@@ -45,11 +45,11 @@ if [ "$COMMIT_VERSION_TAG" == "true" ] ; then
   "$MY_PATH/utils/build-image-tag.sh" set "$BEE_VERSION"
 fi
 
-if [ "$STATE_COMMIT" == 'true'  ] ; then
-  echo "The bee image will be built with their state"
-  BEE_VERSION+="-stateful"
+if [ "$STATE_COMMIT" == 'false'  ] ; then
+  echo "The bee image will be built without their state"
+  BEE_VERSION+="-stateless"
   "$MY_PATH/utils/build-image-tag.sh" set "$BEE_VERSION"
-  echo "Stateful Bee version: $BEE_VERSION"
+  echo "Stateless Bee version: $BEE_VERSION"
 fi
 
 ### BEE_VERSION ALERNATIONS END
