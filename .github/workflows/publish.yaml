@@ -26,7 +26,7 @@ on:
       - '**'
 
 env:
-  BEE_IMAGE_PREFIX: 'docker.pkg.github.com/ethersphere/bee-factory'
+  BEE_IMAGE_PREFIX: 'ethersphere/bee-factory'
   BUILD_IMAGE: 'false'
   COMMIT_VERSION_TAG: 'true'
   STATE_COMMIT: 'true'
@@ -56,19 +56,18 @@ jobs:
             echo "BEE_VERSION=${BEE_VERSION/v}" >> $GITHUB_ENV
           fi
 
-      - name: Auth to Github Package Docker Registry
+      - name: Auth to Docker Hub
         if: ${{ github.event_name == 'repository_dispatch' || (github.event.inputs.buildImage == 'true' && success())  }}
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login https://docker.pkg.github.com -u ${GITHUB_ACTOR} --password-stdin
+          echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u ${{secrets.DOCKERHUB_USERNAME}} --password-stdin
 
       - name: Install npm deps
-        run: npm ci
+        run: cd ./generator && npm ci
 
       - name: Build images
         id: build
         run: |
           cd ./generator
-
           BUILD_PARAMS=""
           if [ $BUILD_IMAGE == 'true' ] ; then
             BUILD_PARAMS+=" --build-base-bee --base-bee-commit-hash=$BEE_VERSION"
@@ -82,6 +81,7 @@ jobs:
         id: publish
         if: ${{ github.event_name == 'repository_dispatch' || (github.event.inputs.buildImage == 'true' && success()) }}
         run: |
+          cd ./generator
           npm run publish:env
 
       - name: Trigger Bee-js PR creation

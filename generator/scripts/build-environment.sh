@@ -40,11 +40,6 @@ build_bee() {
     "$MY_PATH/utils/build-image-tag.sh" set "$BEE_VERSION"
 }
 
-# the image label for the produced bee images in case of state commitment
-stateful_image_label() {
-    echo "$BEE_VERSION-stateful"
-}
-
 MY_PATH=$(dirname "$0")
 MY_PATH=$( cd "$MY_PATH" && pwd )
 COMMIT_HASH=HEAD
