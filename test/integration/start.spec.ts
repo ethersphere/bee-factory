@@ -8,7 +8,6 @@ import { Bee, BeeDebug, Reference } from '@ethersphere/bee-js'
 import { DockerError } from '../../src/utils/docker'
 import { findContainer, waitForUsablePostageStamp } from '../utils/docker'
 
-const BLOCKCHAIN_VERSION = '1.2.0'
 const BEE_VERSION = '1.5.1'
 
 let testFailed = false
@@ -54,7 +53,7 @@ describe('start command', () => {
     'should start cluster',
     wrapper(async () => {
       // As spinning the cluster with --detach the command will exit once the cluster is up and running
-      await run(['start', '--detach', BLOCKCHAIN_VERSION, BEE_VERSION])
+      await run(['start', '--detach', BEE_VERSION])
 
       await expect(findContainer(docker, 'queen')).resolves.toBeDefined()
       await expect(findContainer(docker, 'blockchain')).resolves.toBeDefined()
@@ -84,7 +83,7 @@ describe('start command', () => {
     it(
       '',
       wrapper(async () => {
-        await run(['start', '--detach', BLOCKCHAIN_VERSION, BEE_VERSION])
+        await run(['start', '--detach', BEE_VERSION])
 
         expect(docker.getNetwork(`${envPrefix}-network`)).toBeDefined()
       }),
@@ -96,7 +95,7 @@ describe('start command', () => {
 
     beforeAll(async () => {
       console.log('(before) Starting up Bee Factory')
-      await run(['start', '--detach', BLOCKCHAIN_VERSION, BEE_VERSION])
+      await run(['start', '--detach', BEE_VERSION])
 
       console.log('(before) Creating postage stamp ')
       const postage = await beeDebug.createPostageBatch('10', 18)
@@ -117,7 +116,7 @@ describe('start command', () => {
       '',
       wrapper(async () => {
         console.log('(test) Starting the Bee Factory')
-        await run(['start', '--fresh', '--detach', BLOCKCHAIN_VERSION, BEE_VERSION])
+        await run(['start', '--fresh', '--detach', BEE_VERSION])
 
         console.log('(test) Trying to fetch the data')
         await expect(bee.downloadData(reference)).rejects.toHaveProperty('status', 404)

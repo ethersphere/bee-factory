@@ -296,7 +296,7 @@ done
 echo "Check whether the queen node has been connected to every worker..."
 ELAPSED_TIME=0
 WAITING_TIME=2
-TIMEOUT=$((2*30*WAITING_TIME))
+TIMEOUT=$((6*30*WAITING_TIME))
 RESTRICTED_TOKEN=""
 while (( TIMEOUT > ELAPSED_TIME )) ; do
     check_queen_is_running

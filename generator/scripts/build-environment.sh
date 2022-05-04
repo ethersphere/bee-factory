@@ -51,6 +51,8 @@ GEN_TRAFFIC_UPLOAD_NODE_DEBUG="http://localhost:11635"
 CHEQUES_COUNT=1
 # Bee version here means the base bee version on which the images will be built
 BEE_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BEE_VERSION)
+BLOCKCHAIN_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BLOCKCHAIN_VERSION)
+
 SUPPORTED_WORKER_N=4
 
 # handle passed options
@@ -123,6 +125,8 @@ if $GEN_TRAFFIC ; then
 
     "$MY_PATH/bee.sh" stop
     docker container prune -f
+
+    export BLOCKCHAIN_VERSION+="-for-$BEE_VERSION"
 fi
 "$MY_PATH/bee-docker-build.sh"
 "$MY_PATH/blockchain-docker-build.sh"

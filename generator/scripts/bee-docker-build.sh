@@ -10,9 +10,11 @@ DOCKERFILE
 }
 
 dockerbuild() {
+  BLOCKCHAIN_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BLOCKCHAIN_VERSION)
+
   IMAGE_NAME=$(basename "$1")
   IMAGE_NAME="$4/$IMAGE_NAME"
-  docker build "$1" --no-cache -f "$2" -t "$IMAGE_NAME:$3"
+  docker build "$1" --no-cache -f "$2" -t "$IMAGE_NAME:$3" --label "org.ethswarm.beefactory.blockchain-version=$BLOCKCHAIN_VERSION"
 }
 
 MY_PATH=$(dirname "$0")

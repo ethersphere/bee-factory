@@ -32,10 +32,10 @@ $ npm install -g @ethersphere/bee-factory
 
 ```shell
 # This spin up the cluster and exits
-$ bee-factory start --detach 1.2.0 1.5.1
+$ bee-factory start --detach 1.5.1
 
 # This attaches to the Queen container and displays its logs
-$ bee-factory logs queen
+$ bee-factory logs queen --follow
 
 # This stops the cluster and keeping the containers so next time they are spinned up the data are kept
 # but data are not persisted across version's bump!
@@ -43,7 +43,7 @@ $ bee-factory stop
 
 # You can also spin up the cluster without the --detach which then directly
 # attaches to the Queen logs and the cluster is terminated upon SIGINT (Ctrl+C)
-$ bee-factory start 1.2.0 1.5.1
+$ bee-factory start 1.5.1
 ```
 
 For more details see the `--help` page of the CLI and its commands.
