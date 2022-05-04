@@ -12,7 +12,7 @@ import { waitForBlockchain, waitForQueen, waitForWorkers } from '../utils/wait'
 import ora from 'ora'
 import { VerbosityLevel } from './root-command/logging'
 
-const DEFAULT_REPO = 'ethersphere/bee-factory'
+const DEFAULT_REPO = 'ethersphere'
 
 export const ENV_ENV_PREFIX_KEY = 'FACTORY_ENV_PREFIX'
 const ENV_IMAGE_PREFIX_KEY = 'FACTORY_IMAGE_PREFIX'
