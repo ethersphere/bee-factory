@@ -9,7 +9,7 @@ import { DockerError } from '../../src/utils/docker'
 import { findContainer, waitForUsablePostageStamp } from '../utils/docker'
 
 const BLOCKCHAIN_VERSION = '1.2.0'
-const BEE_VERSION = '1.5.1-d0a77598-stateful'
+const BEE_VERSION = '1.5.1'
 
 let testFailed = false
 
