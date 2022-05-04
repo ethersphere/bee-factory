@@ -68,7 +68,7 @@ OR it is possible to build docker images on a desired state, so that a fresh env
 
 Basically, a full-featured Bee environment has 2 types of Docker image:
 
-- Bee images: Bee clients with pre-defined keys (and optionally including the state which you nodes have in its [data-dirs](bee-data-dirs))
+- Bee images: Bee clients with pre-defined keys (and optionally including the state which you nodes have in its [data-dirs](scripts/bee-data-dirs))
 ```sh
 ./scripts/bee-docker-build.sh
 ```
