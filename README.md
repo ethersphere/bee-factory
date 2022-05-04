@@ -48,6 +48,11 @@ $ bee-factory start 1.2.0 1.5.1-d0a77598-stateful
 
 For more details see the `--help` page of the CLI and its commands.
 
+### Docker Images
+
+Bee Factory as the NPM package that you can install, like mentioned above, works in a way that it orchestrates launching Bee Factory Docker images
+in correct order and awaits for certain initializations to happen in correct form.
+
 ## Contribute
 
 There are some ways you can make this module better:
