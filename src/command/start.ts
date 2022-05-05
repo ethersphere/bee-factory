@@ -11,6 +11,7 @@ import {
 import { waitForBlockchain, waitForQueen, waitForWorkers } from '../utils/wait'
 import ora from 'ora'
 import { VerbosityLevel } from './root-command/logging'
+import { findBeeVersion } from '../utils/config-sources'
 
 const DEFAULT_REPO = 'ethersphere'
 
@@ -72,11 +73,17 @@ export class Start extends RootCommand implements LeafCommand {
   })
   public envPrefix!: string
 
-  @Argument({ key: 'bee-version', description: 'Bee image version', required: true })
+  @Argument({ key: 'bee-version', description: 'Bee image version', required: false })
   public beeVersion!: string
 
   public async run(): Promise<void> {
     await super.init()
+
+    if (!this.beeVersion) {
+      this.beeVersion = await findBeeVersion()
+      this.console.log('Bee version not specified. Found it configured externally.')
+      this.console.log(`Spinning up cluster with Bee version ${this.beeVersion}.`)
+    }
 
     const dockerOptions = await this.buildDockerOptions()
     const docker = new Docker(this.console, this.envPrefix, this.imagePrefix, this.repo)
