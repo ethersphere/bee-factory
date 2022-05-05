@@ -72,9 +72,6 @@ export class Start extends RootCommand implements LeafCommand {
   })
   public envPrefix!: string
 
-  @Argument({ key: 'blockchain-version', description: 'Blockchain image version', required: true })
-  public blockchainVersion!: string
-
   @Argument({ key: 'bee-version', description: 'Bee image version', required: true })
   public beeVersion!: string
 
@@ -82,7 +79,7 @@ export class Start extends RootCommand implements LeafCommand {
     await super.init()
 
     const dockerOptions = await this.buildDockerOptions()
-    const docker = new Docker(this.console, this.envPrefix, this.imagePrefix)
+    const docker = new Docker(this.console, this.envPrefix, this.imagePrefix, this.repo)
     const status = await docker.getAllStatus()
 
     if (Object.values(status).every(st => st === 'running')) {
@@ -111,7 +108,7 @@ export class Start extends RootCommand implements LeafCommand {
       text: 'Spawning network...',
       spinner: 'point',
       color: 'yellow',
-      isSilent: this.verbosity !== VerbosityLevel.Quiet,
+      isSilent: this.verbosity === VerbosityLevel.Quiet,
     }).start()
 
     try {
@@ -123,14 +120,17 @@ export class Start extends RootCommand implements LeafCommand {
     }
 
     const blockchainSpinner = ora({
-      text: 'Starting blockchain node...',
+      text: 'Getting blockchain image version...',
       spinner: 'point',
       color: 'yellow',
-      isSilent: this.verbosity !== VerbosityLevel.Quiet,
+      isSilent: this.verbosity === VerbosityLevel.Quiet,
     }).start()
 
     try {
-      await docker.startBlockchainNode(this.blockchainVersion, this.beeVersion, dockerOptions)
+      const blockchainVersion = await docker.getBlockchainVersionFromQueenMetadata(this.beeVersion)
+
+      blockchainSpinner.text = 'Starting blockchain node...'
+      await docker.startBlockchainNode(blockchainVersion, dockerOptions)
       blockchainSpinner.text = 'Waiting until blockchain is ready...'
       await waitForBlockchain()
       blockchainSpinner.succeed('Blockchain node is up and listening')
@@ -144,7 +144,7 @@ export class Start extends RootCommand implements LeafCommand {
       text: 'Starting queen Bee node...',
       spinner: 'point',
       color: 'yellow',
-      isSilent: this.verbosity !== VerbosityLevel.Quiet,
+      isSilent: this.verbosity === VerbosityLevel.Quiet,
     }).start()
 
     try {
@@ -164,7 +164,7 @@ export class Start extends RootCommand implements LeafCommand {
       text: 'Starting worker Bee nodes...',
       spinner: 'point',
       color: 'yellow',
-      isSilent: this.verbosity !== VerbosityLevel.Quiet,
+      isSilent: this.verbosity === VerbosityLevel.Quiet,
     }).start()
 
     try {
@@ -182,7 +182,7 @@ export class Start extends RootCommand implements LeafCommand {
     }
 
     if (!this.detach) {
-      await docker.logs(ContainerType.QUEEN, process.stdout)
+      await docker.logs(ContainerType.QUEEN, process.stdout, true)
     }
   }
 
@@ -191,7 +191,7 @@ export class Start extends RootCommand implements LeafCommand {
       text: 'Stopping all containers...',
       spinner: 'point',
       color: 'red',
-      isSilent: this.verbosity !== VerbosityLevel.Quiet,
+      isSilent: this.verbosity === VerbosityLevel.Quiet,
     }).start()
 
     await docker.stopAll(false)
@@ -201,7 +201,6 @@ export class Start extends RootCommand implements LeafCommand {
 
   private async buildDockerOptions(): Promise<RunOptions> {
     return {
-      repo: this.repo,
       fresh: this.fresh,
     }
   }

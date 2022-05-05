@@ -11,12 +11,14 @@ const WORKER_IMAGE_NAME_SUFFIX = '-worker'
 const NETWORK_NAME_SUFFIX = '-network'
 
 export const WORKER_COUNT = 4
+export const BLOCKCHAIN_VERSION_LABEL_KEY = 'org.ethswarm.beefactory.blockchain-version'
+
+// TODO: This should be possible to override with for example ENV variable in case somebody is rocking custom images
 const SWAP_FACTORY_ADDRESS = '0x5b1869D9A4C187F2EAa108f3062412ecf0526b24'
 const POSTAGE_STAMP_ADDRESS = '0xCfEB869F69431e42cdB54A4F4f105C19C080A601'
 const PRICE_ORACLE_ADDRESS = '0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B'
 
 export interface RunOptions {
-  repo: string
   fresh: boolean
 }
 
@@ -52,6 +54,7 @@ export class Docker {
   private runningContainers: Container[]
   private envPrefix: string
   private imagePrefix: string
+  private repo?: string
 
   private get networkName() {
     return `${this.envPrefix}${NETWORK_NAME_SUFFIX}`
@@ -60,21 +63,39 @@ export class Docker {
   private get blockchainName() {
     return `${this.envPrefix}${BLOCKCHAIN_IMAGE_NAME_SUFFIX}`
   }
+  private blockchainImage(blockchainVersion: string) {
+    if (!this.repo) throw new TypeError('Repo has to be defined!')
+
+    return `${this.repo}/${this.imagePrefix}${BLOCKCHAIN_IMAGE_NAME_SUFFIX}:${blockchainVersion}`
+  }
 
   private get queenName() {
     return `${this.envPrefix}${QUEEN_IMAGE_NAME_SUFFIX}`
+  }
+
+  private queenImage(beeVersion: string) {
+    if (!this.repo) throw new TypeError('Repo has to be defined!')
+
+    return `${this.repo}/${this.imagePrefix}${QUEEN_IMAGE_NAME_SUFFIX}:${beeVersion}`
   }
 
   private workerName(index: number) {
     return `${this.envPrefix}${WORKER_IMAGE_NAME_SUFFIX}-${index}`
   }
 
-  constructor(console: Logging, envPrefix: string, imagePrefix: string) {
+  private workerImage(beeVersion: string, workerNumber: number) {
+    if (!this.repo) throw new TypeError('Repo has to be defined!')
+
+    return `${this.repo}/${this.imagePrefix}${WORKER_IMAGE_NAME_SUFFIX}-${workerNumber}:${beeVersion}`
+  }
+
+  constructor(console: Logging, envPrefix: string, imagePrefix: string, repo?: string) {
     this.docker = new Dockerode()
     this.console = console
     this.runningContainers = []
     this.envPrefix = envPrefix
     this.imagePrefix = imagePrefix
+    this.repo = repo
   }
 
   public async createNetwork(): Promise<void> {
@@ -85,11 +106,11 @@ export class Docker {
     }
   }
 
-  public async startBlockchainNode(blockchainVersion: string, beeVersion: string, options: RunOptions): Promise<void> {
+  public async startBlockchainNode(blockchainVersion: string, options: RunOptions): Promise<void> {
     if (options.fresh) await this.removeContainer(this.blockchainName)
 
     const container = await this.findOrCreateContainer(this.blockchainName, {
-      Image: `${options.repo}/${this.imagePrefix}${BLOCKCHAIN_IMAGE_NAME_SUFFIX}:${blockchainVersion}-for-${beeVersion}`,
+      Image: this.blockchainImage(blockchainVersion),
       name: this.blockchainName,
       ExposedPorts: {
         '9545/tcp': {},
@@ -117,7 +138,7 @@ export class Docker {
     if (options.fresh) await this.removeContainer(this.queenName)
 
     const container = await this.findOrCreateContainer(this.queenName, {
-      Image: `${options.repo}/${this.imagePrefix}${QUEEN_IMAGE_NAME_SUFFIX}:${beeVersion}`,
+      Image: this.queenImage(beeVersion),
       name: this.queenName,
       ExposedPorts: {
         '1633/tcp': {},
@@ -160,7 +181,7 @@ export class Docker {
     if (options.fresh) await this.removeContainer(this.workerName(workerNumber))
 
     const container = await this.findOrCreateContainer(this.workerName(workerNumber), {
-      Image: `${options.repo}/${this.imagePrefix}${WORKER_IMAGE_NAME_SUFFIX}-${workerNumber}:${beeVersion}`,
+      Image: this.workerImage(beeVersion, workerNumber),
       name: this.workerName(workerNumber),
       ExposedPorts: {
         '1633/tcp': {},
@@ -241,6 +262,22 @@ export class Docker {
           .map(containerProcessor),
       )
     }
+  }
+
+  public async getBlockchainVersionFromQueenMetadata(beeVersion: string): Promise<string> {
+    // Lets pull the Queen's image if it is not present
+    const pullStream = await this.docker.pull(this.queenImage(beeVersion))
+    await new Promise(res => this.docker.modem.followProgress(pullStream, res))
+
+    const queenMetadata = await this.docker.getImage(this.queenImage(beeVersion)).inspect()
+
+    const version = queenMetadata.Config.Labels[BLOCKCHAIN_VERSION_LABEL_KEY]
+
+    if (!version) {
+      throw new Error('Blockchain image version was not found in Queen image labels!')
+    }
+
+    return version
   }
 
   public async getAllStatus(): Promise<AllStatus> {
