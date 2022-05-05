@@ -6,7 +6,7 @@ STATE_COMMIT=$("$MY_PATH/utils/env-variable-value.sh" STATE_COMMIT)
 BUILD_IMAGE=$("$MY_PATH/utils/env-variable-value.sh" BUILD_IMAGE)
 BLOCKCHAIN_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BLOCKCHAIN_VERSION)
 
-if [ $BUILD_IMAGE == 'true' ] || [ $STATE_COMMIT == 'true' ] ; then
+if [ $BUILD_IMAGE == 'true' ] ; then
   # Necessary for fetch BEE_VERSION from .commit-version-tag
   export COMMIT_VERSION_TAG='true'
 fi

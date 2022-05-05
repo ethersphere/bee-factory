@@ -7,7 +7,7 @@ import { ENV_ENV_PREFIX_KEY } from '../../src/command/start'
 import { findContainer } from '../utils/docker'
 
 const BLOCKCHAIN_VERSION = '1.2.0'
-const BEE_VERSION = '1.5.1-d0a77598-stateful'
+const BEE_VERSION = '1.5.1'
 
 describe('stop command', () => {
   let docker: Dockerode

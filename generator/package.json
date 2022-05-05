@@ -13,7 +13,7 @@
     "gen:traffic": "node ./scripts/gen-traffic.js"
   },
   "dependencies": {
-    "@ethersphere/bee-js": "^3.2.0",
+    "@ethersphere/bee-js": "^3.3.4",
     "@openzeppelin/contracts": "^3.1.0",
     "truffle": "^5.3.5"
   },

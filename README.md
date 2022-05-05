@@ -32,7 +32,7 @@ $ npm install -g @ethersphere/bee-factory
 
 ```shell
 # This spin up the cluster and exits
-$ bee-factory start --detach 1.2.0 1.5.1-d0a77598-stateful
+$ bee-factory start --detach 1.2.0 1.5.1
 
 # This attaches to the Queen container and displays its logs
 $ bee-factory logs queen
@@ -43,10 +43,19 @@ $ bee-factory stop
 
 # You can also spin up the cluster without the --detach which then directly
 # attaches to the Queen logs and the cluster is terminated upon SIGINT (Ctrl+C)
-$ bee-factory start 1.2.0 1.5.1-d0a77598-stateful
+$ bee-factory start 1.2.0 1.5.1
 ```
 
 For more details see the `--help` page of the CLI and its commands.
+
+### Docker Images
+
+Bee Factory as the NPM package that you can install, like mentioned above, works in a way that it orchestrates launching Bee Factory Docker images
+in correct order and awaits for certain initializations to happen in correct form. These Docker images are automatically built with our CI
+upon every new Bee release, so you can just specify which version you want to run (starting with `1.5.1` version) as part of the `start` command.
+
+If for some reason you want built your own images, that is possible but discouraged and not supported (**here be dragons**) using the scripts in the `generator` subfolder.
+Upon building and publishing these images you can consume them using with Bee Factory with the `--repo` flag.
 
 ## Contribute
 

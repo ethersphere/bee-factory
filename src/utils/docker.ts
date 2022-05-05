@@ -3,7 +3,7 @@ import { Logging } from '../command/root-command/logging'
 import { ContainerImageConflictError } from './error'
 
 export const DEFAULT_ENV_PREFIX = 'bee-factory'
-export const DEFAULT_IMAGE_PREFIX = 'swarm-test'
+export const DEFAULT_IMAGE_PREFIX = 'bee-factory'
 
 const BLOCKCHAIN_IMAGE_NAME_SUFFIX = '-blockchain'
 const QUEEN_IMAGE_NAME_SUFFIX = '-queen'
