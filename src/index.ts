@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { cli } from 'furious-commander'
 import { application } from './application'
 import { optionParameters, rootCommandClasses } from './config'
