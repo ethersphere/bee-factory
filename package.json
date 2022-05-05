@@ -29,7 +29,7 @@
     "dist"
   ],
   "scripts": {
-    "prepublishOnly": "cross-env NODE_ENV=production npm run build",
+    "prepublishOnly": "npm run build",
     "build": "rimraf dist && tsc",
     "start": "ts-node src/index.ts",
     "test": "jest --verbose --config=jest.config.ts",
