@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.0](https://www.github.com/ethersphere/bee-factory/compare/v0.1.2...v0.2.0) (2022-05-05)
+
+
+### Features
+
+* allow version with commit hash ([9c99180](https://www.github.com/ethersphere/bee-factory/commit/9c99180aacc94a7e9fa0116812686766a29c0096))
+
+
+### Bug Fixes
+
+* regex ([1ac6d89](https://www.github.com/ethersphere/bee-factory/commit/1ac6d89815a29f0b319a7d2c16dbc31dbb554cfd))
+* shebang and bee-js in deps ([b7659fc](https://www.github.com/ethersphere/bee-factory/commit/b7659fc8b4ebd5967470e7517ab2990086c72a54))
+
 ### [0.1.2](https://www.github.com/ethersphere/bee-factory/compare/v0.1.1...v0.1.2) (2022-05-05)
 
 
