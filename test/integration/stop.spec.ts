@@ -6,8 +6,6 @@ import { run } from '../utils/run'
 import { ENV_ENV_PREFIX_KEY } from '../../src/command/start'
 import { findContainer } from '../utils/docker'
 
-const BEE_VERSION = '1.5.1'
-
 describe('stop command', () => {
   let docker: Dockerode
   const envPrefix = `bee-factory-test-${crypto.randomBytes(4).toString('hex')}`
@@ -26,7 +24,7 @@ describe('stop command', () => {
   describe('should stop cluster', () => {
     beforeAll(async () => {
       // As spinning the cluster with --detach the command will exit once the cluster is up and running
-      await run(['start', '--detach', BEE_VERSION])
+      await run(['start', '--detach'])
     })
 
     it('', async () => {
@@ -51,7 +49,7 @@ describe('stop command', () => {
   describe('should stop cluster and remove containers', () => {
     beforeAll(async () => {
       // As spinning the cluster with --detach the command will exit once the cluster is up and running
-      await run(['start', '--detach', BEE_VERSION])
+      await run(['start', '--detach'])
     })
 
     it('', async () => {

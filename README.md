@@ -31,8 +31,11 @@ $ npm install -g @ethersphere/bee-factory
 ## Usage
 
 ```shell
-# This spin up the cluster and exits
+# This spins up the cluster for specific Bee version and exits
 $ bee-factory start --detach 1.5.1
+
+# The spins up the cluster using Bee version configured in external places. See bellow for options where to place it.
+$ bee-factory start --detach
 
 # This attaches to the Queen container and displays its logs
 $ bee-factory logs queen --follow
@@ -47,6 +50,13 @@ $ bee-factory start 1.5.1
 ```
 
 For more details see the `--help` page of the CLI and its commands.
+
+### External Bee version configuration
+
+You can omit the Bee version argument when running `bee-factory start` command if you specify it in one of the expected places:
+
+ - `package.json` placed in current working directory (cwd) under the `engines.bee` property.
+ - `.beefactory.json` placed in current working directory (cwd) with property `version`.
 
 ### Docker Images
 
