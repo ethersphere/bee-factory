@@ -22,9 +22,9 @@
     "url": "https://github.com/ethersphere/bee-factory.git"
   },
   "bin": {
-    "bee-factory": "./dist/index.js"
+    "bee-factory": "./dist/src/index.js"
   },
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "files": [
     "dist"
   ],
