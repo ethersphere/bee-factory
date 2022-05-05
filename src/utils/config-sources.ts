@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises'
 import * as path from 'path'
 
-const VERSION_REGEX = /^\d\.\d\.\d(-\w+)+$/
+const VERSION_REGEX = /^\d\.\d\.\d(-\w+)*$/
 
 export function stripCommit(version: string): string {
   if (!VERSION_REGEX.test(version)) {
