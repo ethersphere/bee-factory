@@ -1,5 +1,12 @@
 # Changelog
 
+### [0.1.2](https://www.github.com/ethersphere/bee-factory/compare/v0.1.1...v0.1.2) (2022-05-05)
+
+
+### Bug Fixes
+
+* correct bin endpoint ([9520830](https://www.github.com/ethersphere/bee-factory/commit/952083001d3b1f858fd5102ba06a7121661bb15e))
+
 ### [0.1.1](https://www.github.com/ethersphere/bee-factory/compare/v0.1.0...v0.1.1) (2022-05-05)
 
 
