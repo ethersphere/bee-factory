@@ -1,5 +1,12 @@
 # Changelog
 
+### [0.1.1](https://www.github.com/ethersphere/bee-factory/compare/v0.1.0...v0.1.1) (2022-05-05)
+
+
+### Bug Fixes
+
+* release ([bc63108](https://www.github.com/ethersphere/bee-factory/commit/bc631084522abee182c1adb62022ed5adabebfc8))
+
 ## 0.1.0 (2022-05-05)
 
 
