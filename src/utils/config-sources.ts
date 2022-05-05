@@ -1,6 +1,17 @@
 import { readFile } from 'fs/promises'
 import * as path from 'path'
 
+const VERSION_REGEX = /^\d\.\d\.\d(-\w+)+$/
+
+export function stripCommit(version: string): string {
+  if (!VERSION_REGEX.test(version)) {
+    throw new Error('The version does not have expected format!')
+  }
+
+  // If the version contains commit ==> hash remove it
+  return version.replace(/(-\w+)+$/g, '')
+}
+
 async function searchPackageJson(): Promise<string | undefined> {
   const expectedPath = path.join(process.cwd(), 'package.json')
   const pkgJson = JSON.parse(await readFile(expectedPath, { encoding: 'utf8' }))
