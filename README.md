@@ -1,7 +1,6 @@
 # Bee Factory
 
-[![Tests](https://github.com/ethersphere/bee-factory/actions/workflows/tests.yaml/badge.svg)](https://github.com/ethersphere/bee-factory/actions/workflows/tests.yaml)
-[![Dependency Status](https://david-dm.org/ethersphere/bee-factory.svg?style=flat-square)](https://david-dm.org/ethersphere/bee-factory)
+[![Tests](https://github.com/ethersphere/bee-factory/actions/workflows/test.yaml/badge.svg)](https://github.com/ethersphere/bee-factory/actions/workflows/test.yaml)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fethersphere%2Fbee-factory.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fethersphere%2Fbee-factory?ref=badge_shield)
 [![](https://img.shields.io/badge/made%20by-Swarm-blue.svg?style=flat-square)](https://swarm.ethereum.org/)
 [![standard-readme compliant](https://img.shields.io/badge/standard--readme-OK-brightgreen.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
