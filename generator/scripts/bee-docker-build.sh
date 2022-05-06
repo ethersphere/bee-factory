@@ -11,10 +11,17 @@ DOCKERFILE
 
 dockerbuild() {
   BLOCKCHAIN_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BLOCKCHAIN_VERSION)
+  PLATFORM_FLAG=""
+
+  if [ -n "$BEE_PLATFORM" ]; then
+    # Multiplatform build needs to push the images right away as docker buildx does not output images loaded into
+    # docker itself, or it can do that but only for one platform.
+    PLATFORM_FLAG="--platform=$BEE_PLATFORM --push"
+  fi
 
   IMAGE_NAME=$(basename "$1")
   IMAGE_NAME="$4/$IMAGE_NAME"
-  docker build "$1" --no-cache -f "$2" -t "$IMAGE_NAME:$3" --label "org.ethswarm.beefactory.blockchain-version=$BLOCKCHAIN_VERSION"
+  docker build "$1" --no-cache -f "$2" -t "$IMAGE_NAME:$3" $PLATFORM_FLAG --label "org.ethswarm.beefactory.blockchain-version=$BLOCKCHAIN_VERSION"
 }
 
 MY_PATH=$(dirname "$0")
