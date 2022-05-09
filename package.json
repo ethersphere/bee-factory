@@ -1,6 +1,6 @@
 {
   "name": "@ethersphere/bee-factory",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Orchestration CLI for spinning up local development Bee cluster with Docker",
   "keywords": [
     "bee",

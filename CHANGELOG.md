@@ -1,5 +1,12 @@
 # Changelog
 
+### [0.2.1](https://www.github.com/ethersphere/bee-factory/compare/v0.2.0...v0.2.1) (2022-05-09)
+
+
+### Bug Fixes
+
+* dont use promise fs namespace for node12 support ([#97](https://www.github.com/ethersphere/bee-factory/issues/97)) ([bef03ca](https://www.github.com/ethersphere/bee-factory/commit/bef03cabc86716917c4b7d0047e7a96c47324058))
+
 ## [0.2.0](https://www.github.com/ethersphere/bee-factory/compare/v0.1.2...v0.2.0) (2022-05-05)
 
 
