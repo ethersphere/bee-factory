@@ -9,8 +9,8 @@ for BEE_DIR in $BEE_DIRS
 do
   echo "$BEE_DIR"
   BEE_DIR_PATH="$MY_PATH/bee-data-dirs/$BEE_DIR"
-  sudo rm -rf "$BEE_DIR_PATH/localstore"
-  sudo rm -rf "$BEE_DIR_PATH/statestore"
+  rm -rf "$BEE_DIR_PATH/localstore"
+  rm -rf "$BEE_DIR_PATH/statestore"
 done
 
 echo "Removing stopped Bee Docker containers..."

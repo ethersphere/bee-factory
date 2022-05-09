@@ -1,4 +1,4 @@
-const { Bee, BeeDebug } = require('@ethersphere/bee-js')
+const { Bee, BeeDebug, DebugPostageBatch, BatchId } = require('@ethersphere/bee-js')
 
 class BeePair {
   /**
@@ -57,6 +57,35 @@ async function uploadRandomBytes(beePair, seed = 500, bytes = 1024 * 4 * 400) {
   console.log(`${beePair.uploaderBee.url} uploaded ${bytes} bytes to ${reference}`)
 }
 
+const DEFAULT_POLLING_FREQUENCY = 1_000
+const DEFAULT_STAMP_USABLE_TIMEOUT = 120_000
+
+async function waitUntilStampUsable(batchId, beeDebug, options = {}) {
+  const timeout = options.timeout || DEFAULT_STAMP_USABLE_TIMEOUT
+  const pollingFrequency = options.pollingFrequency || DEFAULT_POLLING_FREQUENCY
+  let timeoutReached = false
+
+  const timeoutPromise = async () =>
+    new Promise((_, reject) =>
+      setTimeout(() => {
+        timeoutReached = true
+        reject(new Error('Wait until stamp usable timeout has been reached'))
+      }, timeout),
+    )
+
+  const stampWaitPromise = async () => {
+    while (!timeoutReached) {
+      const stamp = await beeDebug.getPostageBatch(batchId)
+
+      if (stamp.usable) return stamp
+      await sleep(pollingFrequency)
+    }
+  }
+
+  // The typecasting is needed because technically stampWaitPromise can return undefined but the timeoutPromise would already throw exception
+  return Promise.race([stampWaitPromise(), timeoutPromise()])
+}
+
 /**
  * Generate traffic on Bee node(s)
  *
@@ -92,15 +121,15 @@ async function genTrafficLoop(hosts, minCheques) {
 
     console.log(`Creating postage stamp on ${uploaderBeeDebugUrl}...`)
     const postageBatchId = await uploaderBeeDebug.createPostageBatch(POSTAGE_STAMPS_AMOUNT, POSTAGE_STAMPS_DEPTH)
-    console.log(`Generated ${postageBatchId} postage stamp on ${uploaderBeeDebugUrl}...`)
+    console.log(`Generated ${postageBatchId} postage stamp on ${uploaderBeeDebugUrl}. Waiting until it is usable.`)
+
+    await waitUntilStampUsable(postageBatchId, uploaderBeeDebug)
+    console.log('Postage stamp usable.')
 
     return new BeePair(chequeReceiverBeeDebug, uploaderBee, uploaderBeeDebug, postageBatchId)
   })
 
   const bees = await Promise.all(promises)
-
-  console.log(`wait 11 secs (>10 block time) before postage stamp usages`)
-  await sleep(11 * 1000)
 
   while (true) {
     await genTrafficOnOpenPorts(bees)
@@ -125,7 +154,7 @@ async function genTrafficLoop(hosts, minCheques) {
       }
       if (beesUncashedCheques.every(uncashedCheques => uncashedCheques.length >= minCheques)) {
         console.log(`Generated at least ${minCheques} for every node on the given Debug API endpoints`)
-        break
+        process.exit()
       } else {
         console.log(
           `There is not enough uncashed cheques on Bee node(s)`,

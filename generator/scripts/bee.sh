@@ -22,7 +22,6 @@ PARAMETERS:
     --own-image                 If passed, the used Docker image names will be identical as the name of the workers.
     --version=x.y.z             used version of Bee client.
     --detach                    It will not log the output of Queen node at the end of the process.
-    --hostname=string           Interface to which should the nodes be bound (default 127.0.0.0).
 USAGE
     exit 1
 }
@@ -179,10 +178,6 @@ do
         LOG=false
         shift 1
         ;;
-        --hostname=*)
-        HOSTNAME="${1#*=}"
-        shift 1
-        ;;
         --help)
         usage
         ;;
@@ -208,7 +203,7 @@ if [ -z "$QUEEN_CONTAINER_IN_DOCKER" ] || $EPHEMERAL ; then
         EXTRA_QUEEN_PARAMS="-v $INIT_ROOT_DATA_DIR/$QUEEN_CONTAINER_NAME:/home/bee/.bee"
     fi
     if [ "$PORT_MAPS" -ge 1 ] ; then
-        EXTRA_QUEEN_PARAMS="$EXTRA_QUEEN_PARAMS -p $HOSTNAME:1633-1635:1633-1635"
+        EXTRA_QUEEN_PARAMS="$EXTRA_QUEEN_PARAMS -p 1633-1635:1633-1635"
     fi
 
     echo "start Bee Queen process"
@@ -230,6 +225,8 @@ if [ -z "$QUEEN_CONTAINER_IN_DOCKER" ] || $EPHEMERAL ; then
         --bootnode="$QUEEN_BOOTNODE" \
         --debug-api-enable \
         --verbosity=4 \
+        --mainnet=false \
+        --block-time=1 \
         --swap-enable=$SWAP \
         --swap-endpoint="http://$SWARM_BLOCKCHAIN_NAME:9545" \
         --swap-factory-address=$SWAP_FACTORY_ADDRESS \
@@ -262,7 +259,7 @@ for i in $(seq 1 1 "$WORKERS"); do
         if [ $PORT_MAPS -gt $i ] ; then
             PORT_START=$((1633+(10000*i)))
             PORT_END=$((PORT_START + 2))
-            EXTRA_WORKER_PARAMS="$EXTRA_WORKER_PARAMS -p $HOSTNAME:$PORT_START-$PORT_END:1633-1635"
+            EXTRA_WORKER_PARAMS="$EXTRA_WORKER_PARAMS -p $PORT_START-$PORT_END:1633-1635"
         fi
 
         # run docker container
@@ -279,6 +276,9 @@ for i in $(seq 1 1 "$WORKERS"); do
           --password "$BEE_PASSWORD" \
           --bootnode="$QUEEN_UNDERLAY_ADDRESS" \
           --debug-api-enable \
+          --verbosity=4 \
+          --mainnet=false \
+          --block-time=1 \
           --swap-enable=$SWAP \
           --swap-endpoint="http://$SWARM_BLOCKCHAIN_NAME:9545" \
           --swap-factory-address=$SWAP_FACTORY_ADDRESS \

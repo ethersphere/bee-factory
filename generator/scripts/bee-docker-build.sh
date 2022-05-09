@@ -35,7 +35,7 @@ OFFICIAL_BEE_IMAGE="ethersphere/bee:$BEE_VERSION"
 # Make sure we the user has permission all the files
 echo "Build Bee Docker images..."
 echo "You may need to pass your password for sudo permission to give the right permission to the bee-data folders"
-sudo chmod 777 -R "$MY_PATH/bee-data-dirs"
+chmod 777 -R "$MY_PATH/bee-data-dirs"
 
 echo "Update common dockerfile"
 dockerfile "$MY_PATH/bee-data-dirs/Dockerfile" "$BEE_VERSION"
