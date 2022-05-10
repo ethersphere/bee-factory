@@ -17,9 +17,13 @@ dockerbuild() {
   PLATFORM_FLAG=""
 
   if [ -n "$BEE_PLATFORM" ]; then
+    PLATFORM_FLAG="--platform=$BEE_PLATFORM"
+  fi
+
+  if [ -n "$PUSH_IMAGES" ]; then
     # Multiplatform build needs to push the images right away as docker buildx does not output images loaded into
     # docker itself, or it can do that but only for one platform.
-    PLATFORM_FLAG="--platform=$BEE_PLATFORM --push"
+      PLATFORM_FLAG+=" --push"
   fi
 
   IMAGE_NAME=$(basename "$1")
