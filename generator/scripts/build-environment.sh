@@ -108,11 +108,12 @@ fi
 "$MY_PATH/blockchain.sh"
 npm run migrate:contracts
 npm run supply
+chmod -R 777 "$MY_PATH/bee-data-dirs/"
+
 if $GEN_TRAFFIC ; then
     export STATE_COMMIT='true'
     echo "Bee image with special state will be commited... traffic generation is on."
     # give the permission to the bee user
-    chmod -R 777 "$MY_PATH/bee-data-dirs/"
     echo "Start Bee nodes so that traffic can be generated and commited to the images"
     "$MY_PATH/bee.sh" start --version="$BEE_VERSION" --workers=$SUPPORTED_WORKER_N --detach
     echo "Generating traffic on Bee node $GEN_TRAFFIC_UPLOAD_NODE"

@@ -64,13 +64,15 @@ get_token() {
 }
 
 fetch_queen_underlay_addr() {
+    set +e
+
     if [[ -n "$QUEEN_UNDERLAY_ADDRESS" ]] ; then return; fi
-    check_queen_is_running
     ELAPSED_TIME=0
     WAITING_TIME=5
     # Wait 2 mins for queen start
     TIMEOUT=$((2*12*WAITING_TIME))
     while (( TIMEOUT > ELAPSED_TIME )) ; do
+        check_queen_is_running
         QUEEN_UNDERLAY_ADDRESS=$(curl -s "$HOSTNAME:1635/addresses" | python -mjson.tool | grep "/ip4/" | awk "!/127.0.0.1/" | sed 's/,$//' | xargs)
         if [[ -z "$QUEEN_UNDERLAY_ADDRESS" ]] ; then
             echo "Waiting for the Queen initialization..."
@@ -81,10 +83,12 @@ fetch_queen_underlay_addr() {
             break;
         fi
     done
+    set -e
 
     if (( TIMEOUT == ELAPSED_TIME )) ; then
         queen_failure
     fi
+
 }
 
 log_queen() {
