@@ -3,8 +3,6 @@
 set -o errexit
 set -o pipefail
 
-set -xv
-
 usage() {
     cat << USAGE >&2
 USAGE:
@@ -127,8 +125,8 @@ if $GEN_TRAFFIC ; then
     # is then used to trigger Bee-js PR creation
     if [ "$CI" == 'true' ]; then
       echo "Image version tag will be extracted from the bee version command..."
-      docker pull "$BEE_VERSION"
-      FULL_BEE_VERSION=$(docker run --rm "$BEE_VERSION" version 2>&1)
+      docker pull "ethersphere/bee:$BEE_VERSION"
+      FULL_BEE_VERSION=$(docker run --rm "ethersphere/bee:$BEE_VERSION" version 2>&1)
       echo "Extracted Bee version: $FULL_BEE_VERSION"
       echo "::set-output name=full-version::$FULL_BEE_VERSION"
 
