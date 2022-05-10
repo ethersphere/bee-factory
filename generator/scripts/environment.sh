@@ -1,4 +1,8 @@
 #!/bin/bash
+
+set -o errexit
+set -o pipefail
+
 usage() {
     cat << USAGE >&2
 USAGE:

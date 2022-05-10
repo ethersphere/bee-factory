@@ -1,10 +1,13 @@
 #!/bin/bash
+set -o errexit
+set -o pipefail
+
 echo "Removing 'localstore' and 'statestore' folders from Bee datadirs..."
 echo "You may need to pass your password for sudo permission to remove the bee-data folders"
 
 MY_PATH=$(dirname "$0")
 MY_PATH=$( cd "$MY_PATH" && pwd )
-BEE_DIRS=$(ls "$MY_PATH/bee-data-dirs")
+BEE_DIRS=$(ls -d $MY_PATH/bee-data-dirs/*/)
 for BEE_DIR in $BEE_DIRS
 do
   echo "$BEE_DIR"

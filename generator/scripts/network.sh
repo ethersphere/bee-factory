@@ -1,4 +1,8 @@
 #!/bin/bash
+
+set -o errexit
+set -o pipefail
+
 MY_PATH=$(dirname "$0")
 MY_PATH=$( cd "$MY_PATH" && pwd )
 # Check used system variable set
