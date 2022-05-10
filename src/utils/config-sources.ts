@@ -16,16 +16,26 @@ export function stripCommit(version: string): string {
 
 async function searchPackageJson(): Promise<string | undefined> {
   const expectedPath = path.join(process.cwd(), 'package.json')
-  const pkgJson = JSON.parse(await readFile(expectedPath, { encoding: 'utf8' }))
 
-  return pkgJson?.engines?.bee
+  try {
+    const pkgJson = JSON.parse(await readFile(expectedPath, { encoding: 'utf8' }))
+
+    return pkgJson?.engines?.bee
+  } catch (e) {
+    return undefined
+  }
 }
 
 async function searchBeeFactory(): Promise<string | undefined> {
   const expectedPath = path.join(process.cwd(), '.beefactory.json')
-  const pkgJson = JSON.parse(await readFile(expectedPath, { encoding: 'utf8' }))
 
-  return pkgJson?.version
+  try {
+    const pkgJson = JSON.parse(await readFile(expectedPath, { encoding: 'utf8' }))
+
+    return pkgJson?.version
+  } catch (e) {
+    return undefined
+  }
 }
 
 export async function findBeeVersion(): Promise<string> {
