@@ -1,4 +1,4 @@
-const { Bee, BeeDebug, DebugPostageBatch, BatchId } = require('@ethersphere/bee-js')
+const { Bee, BeeDebug } = require('@ethersphere/bee-js')
 
 class BeePair {
   /**
@@ -59,31 +59,18 @@ async function uploadRandomBytes(beePair, seed = 500, bytes = 1024 * 4 * 400) {
 
 const DEFAULT_POLLING_FREQUENCY = 1_000
 const DEFAULT_STAMP_USABLE_TIMEOUT = 120_000
-
 async function waitUntilStampUsable(batchId, beeDebug, options = {}) {
-  const timeout = options.timeout || DEFAULT_STAMP_USABLE_TIMEOUT
-  const pollingFrequency = options.pollingFrequency || DEFAULT_POLLING_FREQUENCY
-  let timeoutReached = false
+  const timeout = options?.timeout || DEFAULT_STAMP_USABLE_TIMEOUT
+  const pollingFrequency = options?.pollingFrequency || DEFAULT_POLLING_FREQUENCY
 
-  const timeoutPromise = async () =>
-    new Promise((_, reject) =>
-      setTimeout(() => {
-        timeoutReached = true
-        reject(new Error('Wait until stamp usable timeout has been reached'))
-      }, timeout),
-    )
+  for (let i = 0; i < timeout; i += pollingFrequency) {
+    const stamp = await beeDebug.getPostageBatch(batchId)
 
-  const stampWaitPromise = async () => {
-    while (!timeoutReached) {
-      const stamp = await beeDebug.getPostageBatch(batchId)
-
-      if (stamp.usable) return stamp
-      await sleep(pollingFrequency)
-    }
+    if (stamp.usable) return stamp
+    await sleep(pollingFrequency)
   }
 
-  // The typecasting is needed because technically stampWaitPromise can return undefined but the timeoutPromise would already throw exception
-  return Promise.race([stampWaitPromise(), timeoutPromise()])
+  throw new Error('Wait until stamp usable timeout has been reached')
 }
 
 /**
