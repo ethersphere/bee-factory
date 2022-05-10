@@ -3,6 +3,8 @@
 set -o errexit
 set -o pipefail
 
+set -xv
+
 usage() {
     cat << USAGE >&2
 USAGE:
