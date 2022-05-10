@@ -120,6 +120,12 @@ if $GEN_TRAFFIC ; then
     # This sets output parameter in Github Actions that
     # is then used to trigger Bee-js PR creation
     if [ "$CI" == 'true' ]; then
+      echo "Image version tag will be extracted from the bee version command..."
+      docker pull "$BEE_VERSION"
+      FULL_BEE_VERSION=$(docker run --rm "$BEE_VERSION" version 2>&1)
+      echo "Extracted Bee version: $FULL_BEE_VERSION"
+      echo "::set-output name=full-version::$FULL_BEE_VERSION"
+
       npm run setApiVersions "$GEN_TRAFFIC_CHECKER_NODE_DEBUG"
     fi
 
