@@ -1,4 +1,8 @@
 #!/bin/bash
+
+set -o errexit
+set -o pipefail
+
 MY_PATH=$(dirname "$0")
 MY_PATH=$( cd "$MY_PATH" && pwd )
 
@@ -33,9 +37,3 @@ done
 
 echo "Push Blockchain docker image: $BLOCKCHAIN_IMAGE_NAME"
 docker push "$BLOCKCHAIN_IMAGE_NAME"
-
-# This sets output parameter in Github Actions that
-# is then used to trigger Bee-js PR creation
-if [ $CI == 'true' ]; then
-  echo "::set-output name=bee-version::$BEE_VERSION"
-fi

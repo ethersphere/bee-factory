@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -o errexit
+set -o pipefail
+
 dockerfile() {
     cat << DOCKERFILE > "$1"
 FROM ethersphere/bee:$2
@@ -14,9 +17,13 @@ dockerbuild() {
   PLATFORM_FLAG=""
 
   if [ -n "$BEE_PLATFORM" ]; then
+    PLATFORM_FLAG="--platform=$BEE_PLATFORM"
+  fi
+
+  if [ -n "$PUSH_IMAGES" ]; then
     # Multiplatform build needs to push the images right away as docker buildx does not output images loaded into
     # docker itself, or it can do that but only for one platform.
-    PLATFORM_FLAG="--platform=$BEE_PLATFORM --push"
+      PLATFORM_FLAG+=" --push"
   fi
 
   IMAGE_NAME=$(basename "$1")
@@ -34,9 +41,6 @@ OFFICIAL_BEE_IMAGE="ethersphere/bee:$BEE_VERSION"
 
 # Make sure we the user has permission all the files
 echo "Build Bee Docker images..."
-echo "You may need to pass your password for sudo permission to give the right permission to the bee-data folders"
-sudo chmod 777 -R "$MY_PATH/bee-data-dirs"
-
 echo "Update common dockerfile"
 dockerfile "$MY_PATH/bee-data-dirs/Dockerfile" "$BEE_VERSION"
 
@@ -46,7 +50,7 @@ dockerfile "$MY_PATH/bee-data-dirs/Dockerfile" "$BEE_VERSION"
 # The image will be built with the tag that is the bee version string
 COMMIT_VERSION_TAG="$("$MY_PATH/utils/env-variable-value.sh" COMMIT_VERSION_TAG)"
 if [ "$COMMIT_VERSION_TAG" == "true" ] ; then
-  echo "Image version tag will be extracted from the bee version command..."
+  echo "Image version tag will be extracted from the bee version command from image $OFFICIAL_BEE_IMAGE"
   docker pull $OFFICIAL_BEE_IMAGE
   # somehow the version command's output goes to the stderr
   BEE_VERSION=$(docker run --rm $OFFICIAL_BEE_IMAGE version 2>&1)

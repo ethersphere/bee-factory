@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -o errexit
+set -o pipefail
+
 echoerr() { if [[ $QUIET -ne 1 ]] ; then echo "$@" 1>&2; fi }
 
 usage() {
@@ -22,7 +25,6 @@ PARAMETERS:
     --own-image                 If passed, the used Docker image names will be identical as the name of the workers.
     --version=x.y.z             used version of Bee client.
     --detach                    It will not log the output of Queen node at the end of the process.
-    --hostname=string           Interface to which should the nodes be bound (default 127.0.0.0).
 USAGE
     exit 1
 }
@@ -62,13 +64,15 @@ get_token() {
 }
 
 fetch_queen_underlay_addr() {
+    set +e
+
     if [[ -n "$QUEEN_UNDERLAY_ADDRESS" ]] ; then return; fi
-    check_queen_is_running
     ELAPSED_TIME=0
     WAITING_TIME=5
     # Wait 2 mins for queen start
     TIMEOUT=$((2*12*WAITING_TIME))
     while (( TIMEOUT > ELAPSED_TIME )) ; do
+        check_queen_is_running
         QUEEN_UNDERLAY_ADDRESS=$(curl -s "$HOSTNAME:1635/addresses" | python -mjson.tool | grep "/ip4/" | awk "!/127.0.0.1/" | sed 's/,$//' | xargs)
         if [[ -z "$QUEEN_UNDERLAY_ADDRESS" ]] ; then
             echo "Waiting for the Queen initialization..."
@@ -79,10 +83,12 @@ fetch_queen_underlay_addr() {
             break;
         fi
     done
+    set -e
 
     if (( TIMEOUT == ELAPSED_TIME )) ; then
         queen_failure
     fi
+
 }
 
 log_queen() {
@@ -179,10 +185,6 @@ do
         LOG=false
         shift 1
         ;;
-        --hostname=*)
-        HOSTNAME="${1#*=}"
-        shift 1
-        ;;
         --help)
         usage
         ;;
@@ -208,7 +210,7 @@ if [ -z "$QUEEN_CONTAINER_IN_DOCKER" ] || $EPHEMERAL ; then
         EXTRA_QUEEN_PARAMS="-v $INIT_ROOT_DATA_DIR/$QUEEN_CONTAINER_NAME:/home/bee/.bee"
     fi
     if [ "$PORT_MAPS" -ge 1 ] ; then
-        EXTRA_QUEEN_PARAMS="$EXTRA_QUEEN_PARAMS -p $HOSTNAME:1633-1635:1633-1635"
+        EXTRA_QUEEN_PARAMS="$EXTRA_QUEEN_PARAMS -p 1633-1635:1633-1635"
     fi
 
     echo "start Bee Queen process"
@@ -230,6 +232,8 @@ if [ -z "$QUEEN_CONTAINER_IN_DOCKER" ] || $EPHEMERAL ; then
         --bootnode="$QUEEN_BOOTNODE" \
         --debug-api-enable \
         --verbosity=4 \
+        --mainnet=false \
+        --block-time=1 \
         --swap-enable=$SWAP \
         --swap-endpoint="http://$SWARM_BLOCKCHAIN_NAME:9545" \
         --swap-factory-address=$SWAP_FACTORY_ADDRESS \
@@ -262,7 +266,7 @@ for i in $(seq 1 1 "$WORKERS"); do
         if [ $PORT_MAPS -gt $i ] ; then
             PORT_START=$((1633+(10000*i)))
             PORT_END=$((PORT_START + 2))
-            EXTRA_WORKER_PARAMS="$EXTRA_WORKER_PARAMS -p $HOSTNAME:$PORT_START-$PORT_END:1633-1635"
+            EXTRA_WORKER_PARAMS="$EXTRA_WORKER_PARAMS -p $PORT_START-$PORT_END:1633-1635"
         fi
 
         # run docker container
@@ -279,6 +283,9 @@ for i in $(seq 1 1 "$WORKERS"); do
           --password "$BEE_PASSWORD" \
           --bootnode="$QUEEN_UNDERLAY_ADDRESS" \
           --debug-api-enable \
+          --verbosity=4 \
+          --mainnet=false \
+          --block-time=1 \
           --swap-enable=$SWAP \
           --swap-endpoint="http://$SWARM_BLOCKCHAIN_NAME:9545" \
           --swap-factory-address=$SWAP_FACTORY_ADDRESS \

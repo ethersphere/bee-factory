@@ -1,4 +1,7 @@
 #!/bin/bash
+set -o errexit
+set -o pipefail
+
 MY_PATH=$(dirname "$0")
 MY_PATH=$( cd "$MY_PATH" && pwd )
 # Check used system variable set
@@ -12,6 +15,10 @@ NAME="$BEE_ENV_PREFIX-blockchain"
 
 echo "Make a snapshot from the blockchain..."
 docker commit $NAME $BEE_IMAGE_PREFIX/$NAME:$BLOCKCHAIN_VERSION
+
+if [ -n "$PUSH_IMAGES" ]; then
+  docker push $BEE_IMAGE_PREFIX/$NAME:$BLOCKCHAIN_VERSION
+fi
 
 echo "Stop and remove running blockchain node that the image built on..."
 docker container stop $NAME
