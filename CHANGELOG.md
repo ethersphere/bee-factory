@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0](https://www.github.com/ethersphere/bee-factory/compare/v0.2.0...v0.3.0) (2022-05-10)
+
+
+### Features
+
+* multiarch builds ([#99](https://www.github.com/ethersphere/bee-factory/issues/99)) ([927405b](https://www.github.com/ethersphere/bee-factory/commit/927405bab3cafd79b5b8f53039c49478a0aad01f))
+
+
+### Bug Fixes
+
+* add full bee version with commit for bee-js update ([#104](https://www.github.com/ethersphere/bee-factory/issues/104)) ([b11aab3](https://www.github.com/ethersphere/bee-factory/commit/b11aab3d3cf954b78405d64b8b5d929780948995))
+* commit removing regex honors rc suffix ([#98](https://www.github.com/ethersphere/bee-factory/issues/98)) ([e146b84](https://www.github.com/ethersphere/bee-factory/commit/e146b8406b4b4f1fb25cd6b5c4320fb60785585b))
+* dont use promise fs namespace for node12 support ([#97](https://www.github.com/ethersphere/bee-factory/issues/97)) ([bef03ca](https://www.github.com/ethersphere/bee-factory/commit/bef03cabc86716917c4b7d0047e7a96c47324058))
+
 ## [0.2.0](https://www.github.com/ethersphere/bee-factory/compare/v0.1.2...v0.2.0) (2022-05-05)
 
 
