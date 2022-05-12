@@ -1,5 +1,13 @@
 # Changelog
 
+### [0.3.1](https://www.github.com/ethersphere/bee-factory/compare/v0.3.0...v0.3.1) (2022-05-12)
+
+
+### Bug Fixes
+
+* bee 1.6.0 requires mainnet false ([#110](https://www.github.com/ethersphere/bee-factory/issues/110)) ([00a6f38](https://www.github.com/ethersphere/bee-factory/commit/00a6f38585a387a96c116a1a9bd9d2aae0f2ffb9))
+* proper error handling when conf does not exists ([#106](https://www.github.com/ethersphere/bee-factory/issues/106)) ([c1a1d3a](https://www.github.com/ethersphere/bee-factory/commit/c1a1d3a885aa14adf89405d8b737272678e4e814))
+
 ## [0.3.0](https://www.github.com/ethersphere/bee-factory/compare/v0.2.0...v0.3.0) (2022-05-10)
 
 
