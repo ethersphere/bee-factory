@@ -19,6 +19,7 @@ export const ENV_ENV_PREFIX_KEY = 'FACTORY_ENV_PREFIX'
 const ENV_IMAGE_PREFIX_KEY = 'FACTORY_IMAGE_PREFIX'
 const ENV_REPO_KEY = 'FACTORY_DOCKER_REPO'
 const ENV_DETACH_KEY = 'FACTORY_DETACH'
+const ENV_WORKERS_KEY = 'FACTORY_WORKERS'
 const ENV_FRESH_KEY = 'FACTORY_FRESH'
 
 export class Start extends RootCommand implements LeafCommand {
@@ -45,6 +46,16 @@ export class Start extends RootCommand implements LeafCommand {
     default: false,
   })
   public detach!: boolean
+
+  @Option({
+    key: 'workers',
+    alias: 'w',
+    type: 'number',
+    description: `Number of workers to spin. Value between 0 and ${WORKER_COUNT} including.`,
+    envKey: ENV_WORKERS_KEY,
+    default: WORKER_COUNT,
+  })
+  public workers!: number
 
   @Option({
     key: 'repo',
@@ -78,6 +89,10 @@ export class Start extends RootCommand implements LeafCommand {
 
   public async run(): Promise<void> {
     await super.init()
+
+    if (this.workers < 0 || this.workers > WORKER_COUNT) {
+      throw new Error(`Worker count has to be between 0 and ${WORKER_COUNT} including.`)
+    }
 
     if (!this.beeVersion) {
       this.beeVersion = await findBeeVersion()
@@ -169,25 +184,27 @@ export class Start extends RootCommand implements LeafCommand {
       throw e
     }
 
-    const workerSpinner = ora({
-      text: 'Starting worker Bee nodes...',
-      spinner: 'point',
-      color: 'yellow',
-      isSilent: this.verbosity === VerbosityLevel.Quiet,
-    }).start()
+    if (this.workers > 0) {
+      const workerSpinner = ora({
+        text: 'Starting worker Bee nodes...',
+        spinner: 'point',
+        color: 'yellow',
+        isSilent: this.verbosity === VerbosityLevel.Quiet,
+      }).start()
 
-    try {
-      for (let i = 1; i <= WORKER_COUNT; i++) {
-        await docker.startWorkerNode(this.beeVersion, i, queenAddress, dockerOptions)
+      try {
+        for (let i = 1; i <= this.workers; i++) {
+          await docker.startWorkerNode(this.beeVersion, i, queenAddress, dockerOptions)
+        }
+
+        workerSpinner.text = 'Waiting until all workers connect to queen...'
+        await waitForWorkers(this.workers, docker.getAllStatus.bind(docker))
+        workerSpinner.succeed('Worker nodes are up and listening')
+      } catch (e) {
+        workerSpinner.fail(`It was not possible to start worker nodes!`)
+        await this.stopDocker(docker)
+        throw e
       }
-
-      workerSpinner.text = 'Waiting until all workers connect to queen...'
-      await waitForWorkers(async () => Object.values(await docker.getAllStatus()).every(node => node === 'running'))
-      workerSpinner.succeed('Worker nodes are up and listening')
-    } catch (e) {
-      workerSpinner.fail(`It was not possible to start worker nodes!`)
-      await this.stopDocker(docker)
-      throw e
     }
 
     if (!this.detach) {

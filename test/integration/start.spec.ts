@@ -64,6 +64,29 @@ describe('start command', () => {
     }),
   )
 
+  describe('should start cluster with just few workers', () => {
+    beforeAll(async () => {
+      await run(['stop', '--rm']) // Cleanup the testing containers
+    })
+
+    it(
+      '',
+      wrapper(async () => {
+        // As spinning the cluster with --detach the command will exit once the cluster is up and running
+        await run(['start', '--workers', '2'])
+
+        await expect(findContainer(docker, 'queen')).resolves.toBeDefined()
+        await expect(findContainer(docker, 'blockchain')).resolves.toBeDefined()
+        await expect(findContainer(docker, 'worker-1')).resolves.toBeDefined()
+        await expect(findContainer(docker, 'worker-2')).resolves.toBeDefined()
+        await expect(findContainer(docker, 'worker-3')).rejects.toHaveProperty('statusCode', 404)
+        await expect(findContainer(docker, 'worker-4')).rejects.toHaveProperty('statusCode', 404)
+
+        await expect(beeDebug.getHealth()).resolves.toHaveProperty('status')
+      }),
+    )
+  })
+
   describe('should create docker network', () => {
     beforeAll(async () => {
       await run(['stop', '--rm']) // Cleanup the testing containers
