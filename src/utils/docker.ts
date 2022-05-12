@@ -393,6 +393,7 @@ export class Docker {
       'debug-api-enable': 'true',
       verbosity: '4',
       'swap-enable': 'true',
+      mainnet: 'false',
       'swap-endpoint': `http://${this.blockchainName}:9545`,
       'swap-factory-address': SWAP_FACTORY_ADDRESS,
       password: 'password',
