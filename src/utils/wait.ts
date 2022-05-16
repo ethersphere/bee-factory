@@ -2,7 +2,7 @@ import fetch, { FetchError } from 'node-fetch'
 import { sleep } from './index'
 import { TimeoutError } from './error'
 import { BeeDebug } from '@ethersphere/bee-js'
-import { WORKER_COUNT } from './docker'
+import { AllStatus } from './docker'
 
 const AWAIT_SLEEP = 3_000
 
@@ -80,20 +80,24 @@ export async function waitForQueen(verifyQueenIsUp: () => Promise<boolean>, wait
 }
 
 export async function waitForWorkers(
-  verifyWorkersAreUp: () => Promise<boolean>,
+  workerCount: number,
+  getStatus: () => Promise<AllStatus>,
   waitingIterations = 120,
 ): Promise<void> {
   const beeDebug = new BeeDebug('http://127.0.0.1:1635')
 
+  const status = await getStatus()
+  for (let i = 1; i <= workerCount; i++) {
+    if (status[`worker${i}` as keyof AllStatus] !== 'running') {
+      throw new Error('Some of the workers node is not running!')
+    }
+  }
+
   for (let i = 0; i < waitingIterations; i++) {
     try {
-      if (!(await verifyWorkersAreUp())) {
-        throw new Error('Some of the workers node is not running!')
-      }
-
       const peers = await beeDebug.getPeers()
 
-      if (peers.length >= WORKER_COUNT) {
+      if (peers.length >= workerCount) {
         return
       }
     } catch (e) {
