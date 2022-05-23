@@ -8,9 +8,15 @@ const AWAIT_SLEEP = 3_000
 
 const BLOCKCHAIN_BODY_REQUEST = JSON.stringify({ jsonrpc: '2.0', method: 'eth_chainId', id: 1 })
 const EXPECTED_CHAIN_ID = '0xfb4'
-const ALLOWED_ERRORS = ['ECONNREFUSED', 'ECONNRESET']
+const ALLOWED_ERRORS = ['ECONNREFUSED', 'ECONNRESET', 'UND_ERR_SOCKET']
 
 function isAllowedError(e: FetchError): boolean {
+  //@ts-ignore: Node 18 native fetch returns error where the underlying error is wrapped and placed in e.cause
+  if (e.cause) {
+    //@ts-ignore: Node 18 native fetch returns error where the underlying error is wrapped and placed in e.cause
+    e = e.cause
+  }
+
   if (e.code && ALLOWED_ERRORS.includes(e.code)) {
     return true
   }
