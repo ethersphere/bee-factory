@@ -39,7 +39,7 @@
     "depcheck": "depcheck ."
   },
   "dependencies": {
-    "@ethersphere/bee-js": "^3.3.4",
+    "@ethersphere/bee-js": "^4.0.0",
     "chalk": "^2.4.2",
     "dockerode": "^3.3.1",
     "furious-commander": "^1.7.0",
