@@ -1,5 +1,12 @@
 # Changelog
 
+### [0.4.1](https://www.github.com/ethersphere/bee-factory/compare/v0.4.0...v0.4.1) (2022-05-24)
+
+
+### Bug Fixes
+
+* node 18 fetch support ([#117](https://www.github.com/ethersphere/bee-factory/issues/117)) ([4fa6467](https://www.github.com/ethersphere/bee-factory/commit/4fa64673507831e73e949cf4ad8fc3c93ed09f82))
+
 ## [0.4.0](https://www.github.com/ethersphere/bee-factory/compare/v0.3.0...v0.4.0) (2022-05-16)
 
 
