@@ -117,7 +117,7 @@ jobs:
 
       - name: Trigger Bee-js PR creation
         if: ${{ github.event_name == 'repository_dispatch' }}
-        uses: peter-evans/repository-dispatch@v1
+        uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.REPO_GHA_PAT }}
           repository: ethersphere/bee-js
