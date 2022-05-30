@@ -72,7 +72,7 @@ jobs:
           echo "PUSH_IMAGES=1" >> $GITHUB_ENV
           echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u ${{secrets.DOCKERHUB_USERNAME}} --password-stdin
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         id: cache-npm
         with:
           path: generator/node_modules
