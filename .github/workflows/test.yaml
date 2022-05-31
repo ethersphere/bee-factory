@@ -27,7 +27,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       ## Try getting the node modules from cache, if failed npm ci
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         id: cache-npm
         with:
           path: node_modules
