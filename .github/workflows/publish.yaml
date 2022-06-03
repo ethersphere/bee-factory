@@ -103,7 +103,11 @@ jobs:
           field: engines.bee
           value: ${{ env.BEE_VERSION }}
 
-      - name: Create/update PR
+      - name: Add trailing new-line to package.json
+        if: ${{ github.event_name == 'repository_dispatch' }}
+        run: printf "\n" >> package.json
+
+       - name: Create/update PR
         if: ${{ github.event_name == 'repository_dispatch' }}
         uses: gr2m/create-or-update-pull-request-action@v1
         env:
