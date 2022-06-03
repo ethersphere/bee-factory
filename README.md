@@ -66,6 +66,12 @@ upon every new Bee release, so you can just specify which version you want to ru
 If for some reason you want built your own images, that is possible but discouraged and not supported (**here be dragons**) using the scripts in the `generator` subfolder.
 Upon building and publishing these images you can consume them using with Bee Factory with the `--repo` flag.
 
+#### Latest versions
+
+There is special Bee Factory image tag `latest` that has the latest Bee's master build.
+It is not recommended using this tag unless you need to test some upcoming feature and know what are you doing.
+There is high chance that there might be some change in Bee that is not compatible with current Bee Factory and so it might not even work.
+
 ## Contribute
 
 There are some ways you can make this module better:
