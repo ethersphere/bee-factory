@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import Dockerode from 'dockerode'
 import crypto from 'crypto'
+import fetch from 'node-fetch'
 
 import { run } from '../utils/run'
 import { ENV_ENV_PREFIX_KEY } from '../../src/command/start'
@@ -61,6 +62,23 @@ describe('start command', () => {
       await expect(findContainer(docker, 'worker-4')).resolves.toBeDefined()
 
       await expect(beeDebug.getHealth()).resolves.toHaveProperty('status')
+    }),
+  )
+
+  it(
+    'should spawn restricted bee if requested',
+    wrapper(async () => {
+      await run(['start', '--fresh', '--restricted'])
+
+      await expect(findContainer(docker, 'queen')).resolves.toBeDefined()
+      await expect(findContainer(docker, 'blockchain')).resolves.toBeDefined()
+      await expect(findContainer(docker, 'worker-1')).resolves.toBeDefined()
+      await expect(findContainer(docker, 'worker-2')).resolves.toBeDefined()
+      await expect(findContainer(docker, 'worker-3')).resolves.toBeDefined()
+      await expect(findContainer(docker, 'worker-4')).resolves.toBeDefined()
+
+      // Health endpoint is unprotected and is enabled on the "normal" API only with --restricted flag
+      expect((await fetch('http://localhost:1633/health')).json()).resolves.toHaveProperty('status')
     }),
   )
 

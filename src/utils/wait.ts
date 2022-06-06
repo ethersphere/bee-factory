@@ -8,7 +8,8 @@ const AWAIT_SLEEP = 3_000
 
 const BLOCKCHAIN_BODY_REQUEST = JSON.stringify({ jsonrpc: '2.0', method: 'eth_chainId', id: 1 })
 const EXPECTED_CHAIN_ID = '0xfb4'
-const ALLOWED_ERRORS = ['ECONNREFUSED', 'ECONNRESET', 'UND_ERR_SOCKET']
+const ALLOWED_ERRORS_CODES = ['ECONNREFUSED', 'ECONNRESET', 'UND_ERR_SOCKET']
+const ALLOWED_ERRORS_MESSAGES = ['other side closed', 'socket hang up']
 
 function isAllowedError(e: FetchError): boolean {
   //@ts-ignore: Node 18 native fetch returns error where the underlying error is wrapped and placed in e.cause
@@ -17,17 +18,17 @@ function isAllowedError(e: FetchError): boolean {
     e = e.cause
   }
 
-  if (e.code && ALLOWED_ERRORS.includes(e.code)) {
+  if (e.code && ALLOWED_ERRORS_CODES.includes(e.code)) {
     return true
   }
 
   // Errors from Bee-js does not have the `FetchError` structure (eq. `code` property)
   // so we assert message itself.
-  if (e.message.includes('socket hang up')) {
+  if (ALLOWED_ERRORS_MESSAGES.some(substring => e.message.includes(substring))) {
     return true
   }
 
-  return ALLOWED_ERRORS.some(substring => e.message.includes(substring))
+  return ALLOWED_ERRORS_CODES.some(substring => e.message.includes(substring))
 }
 
 export async function waitForBlockchain(waitingIterations = 30): Promise<void> {

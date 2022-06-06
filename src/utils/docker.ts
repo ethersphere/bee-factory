@@ -1,4 +1,6 @@
 import Dockerode, { Container, ContainerCreateOptions } from 'dockerode'
+import { hash } from 'bcrypt'
+
 import { Logging } from '../command/root-command/logging'
 import { ContainerImageConflictError } from './error'
 
@@ -20,6 +22,11 @@ const PRICE_ORACLE_ADDRESS = '0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B'
 
 export interface RunOptions {
   fresh: boolean
+}
+
+export interface QueenRunOptions extends RunOptions {
+  restricted?: boolean
+  restrictedPassword?: string
 }
 
 export enum ContainerType {
@@ -134,8 +141,16 @@ export class Docker {
     }
   }
 
-  public async startQueenNode(beeVersion: string, options: RunOptions): Promise<void> {
+  public async startQueenNode(beeVersion: string, options: QueenRunOptions): Promise<void> {
     if (options.fresh) await this.removeContainer(this.queenName)
+
+    const customOpts: Record<string, string> = {}
+
+    if (options.restricted) {
+      customOpts.restricted = 'true'
+      customOpts['admin-password'] = await hash(options.restrictedPassword!, 10)
+      customOpts['token-encryption-key'] = 'beeFactorySecretKey' // We keep this a deterministic value so the tokens across bee-factory instances are valid
+    }
 
     const container = await this.findOrCreateContainer(this.queenName, {
       Image: this.queenImage(beeVersion),
@@ -147,7 +162,7 @@ export class Docker {
       },
       Tty: true,
       Cmd: ['start'],
-      Env: this.createBeeEnvParameters(),
+      Env: this.createBeeEnvParameters(customOpts),
       AttachStderr: false,
       AttachStdout: false,
       HostConfig: {
@@ -189,7 +204,7 @@ export class Docker {
         '1635/tcp': {},
       },
       Cmd: ['start'],
-      Env: this.createBeeEnvParameters(queenAddress),
+      Env: this.createBeeEnvParameters({ bootnode: queenAddress }),
       AttachStderr: false,
       AttachStdout: false,
       HostConfig: {
@@ -387,7 +402,7 @@ export class Docker {
     }
   }
 
-  private createBeeEnvParameters(bootnode?: string): string[] {
+  private createBeeEnvParameters(customOptions?: Record<string, string>): string[] {
     const options: Record<string, string> = {
       'warmup-time': '0',
       'debug-api-enable': 'true',
@@ -403,10 +418,7 @@ export class Docker {
       'full-node': 'true',
       'welcome-message': 'You have found the queen of the beehive...',
       'cors-allowed-origins': '*',
-    }
-
-    if (bootnode) {
-      options.bootnode = bootnode
+      ...customOptions,
     }
 
     // Env variables for Bee has form of `BEE_WARMUP_TIME`, so we need to transform it.
