@@ -68,7 +68,7 @@ describe('start command', () => {
   it(
     'should spawn restricted bee if requested',
     wrapper(async () => {
-      await run(['start', '--fresh', '--restricted'])
+      await run(['start', '--fresh', '--detach', '--restricted'])
 
       await expect(findContainer(docker, 'queen')).resolves.toBeDefined()
       await expect(findContainer(docker, 'blockchain')).resolves.toBeDefined()
