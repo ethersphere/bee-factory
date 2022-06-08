@@ -78,7 +78,7 @@ describe('start command', () => {
       await expect(findContainer(docker, 'worker-4')).resolves.toBeDefined()
 
       // Health endpoint is unprotected and is enabled on the "normal" API only with --restricted flag
-      expect((await fetch('http://localhost:1633/health')).json()).resolves.toHaveProperty('status')
+      expect((await fetch('http://127.0.0.1:1633/health')).json()).resolves.toHaveProperty('status')
     }),
   )
 
