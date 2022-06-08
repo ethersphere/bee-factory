@@ -14,10 +14,13 @@ import { VerbosityLevel } from './root-command/logging'
 import { findBeeVersion, stripCommit } from '../utils/config-sources'
 
 const DEFAULT_REPO = 'ethersphere'
+const DEFAULT_PASSWORD = 'hello'
 
 export const ENV_ENV_PREFIX_KEY = 'FACTORY_ENV_PREFIX'
 const ENV_IMAGE_PREFIX_KEY = 'FACTORY_IMAGE_PREFIX'
 const ENV_REPO_KEY = 'FACTORY_DOCKER_REPO'
+const ENV_RESTRICTED_KEY = 'FACTORY_RESTRICTED'
+const ENV_RESTRICTED_PASSWORD_KEY = 'FACTORY_RESTRICTED_PASSWORD'
 const ENV_DETACH_KEY = 'FACTORY_DETACH'
 const ENV_WORKERS_KEY = 'FACTORY_WORKERS'
 const ENV_FRESH_KEY = 'FACTORY_FRESH'
@@ -65,6 +68,23 @@ export class Start extends RootCommand implements LeafCommand {
     default: DEFAULT_REPO,
   })
   public repo!: string
+
+  @Option({
+    key: 'restricted',
+    type: 'boolean',
+    description: 'Enable Restricted mode for Queen node',
+    envKey: ENV_RESTRICTED_KEY,
+  })
+  public restricted!: boolean
+
+  @Option({
+    key: 'restricted-password',
+    type: 'string',
+    description: 'Password for the administrator account in plain text.',
+    envKey: ENV_RESTRICTED_PASSWORD_KEY,
+    default: DEFAULT_PASSWORD,
+  })
+  public restrictedPassword!: string
 
   @Option({
     key: 'image-prefix',
@@ -172,7 +192,12 @@ export class Start extends RootCommand implements LeafCommand {
     }).start()
 
     try {
-      await docker.startQueenNode(this.beeVersion, dockerOptions)
+      await docker.startQueenNode(this.beeVersion, {
+        restricted: this.restricted,
+        restrictedPassword: this.restrictedPassword,
+        ...dockerOptions,
+      })
+
       queenSpinner.text = 'Waiting until queen node is ready...'
       queenAddress = await waitForQueen(
         async () => (await docker.getStatusForContainer(ContainerType.QUEEN)) === 'running',
