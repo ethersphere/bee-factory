@@ -96,7 +96,7 @@ jobs:
           npm run build:env -- $BUILD_PARAMS
 
       - name: Update bee version in package.json
-        uses: jossef/action-set-json-field@v1
+        uses: jossef/action-set-json-field@v2
         if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag != 'latest' }}
         with:
           file: package.json
