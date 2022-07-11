@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/ethersphere/bee-factory/compare/v0.4.1...v0.5.0) (2022-07-11)
+
+
+### Features
+
+* latest builds ([#150](https://github.com/ethersphere/bee-factory/issues/150)) ([2ef924d](https://github.com/ethersphere/bee-factory/commit/2ef924d615cfc1a612cb9167a28037918114597e))
+
 ### [0.4.1](https://www.github.com/ethersphere/bee-factory/compare/v0.4.0...v0.4.1) (2022-05-24)
 
 
