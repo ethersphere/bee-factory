@@ -103,6 +103,10 @@ jobs:
           field: engines.bee
           value: ${{ env.BEE_VERSION }}
 
+      - name: Add trailing new-line to package.json
+        if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag != 'latest' }}
+        run: printf "\n" >> package.json
+
       - name: Create/update PR
         if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag != 'latest' }}
         uses: gr2m/create-or-update-pull-request-action@v1
@@ -122,4 +126,4 @@ jobs:
           token: ${{ secrets.REPO_GHA_PAT }}
           repository: ethersphere/bee-js
           event-type: update-bee
-          client-payload: '{"imageVersion": "${{ steps.build.outputs.full-version }}", "apiVersion": "${{ steps.build.outputs.api-version }}", "debugApiVersion": "${{ steps.build.outputs.debug-api-version }}"}'
+          client-payload: '{"beeVersion": "${{ steps.build.outputs.full-version }}", "apiVersion": "${{ steps.build.outputs.api-version }}", "debugApiVersion": "${{ steps.build.outputs.debug-api-version }}"}'
