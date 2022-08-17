@@ -33,7 +33,7 @@ $ npm install -g @ethersphere/bee-factory
 # This spins up the cluster for specific Bee version and exits
 $ bee-factory start --detach 1.5.1
 
-# The spins up the cluster using Bee version configured in external places. See bellow for options where to place it.
+# The spins up the cluster using Bee version configured in external places. See below for options where to place it.
 $ bee-factory start --detach
 
 # This attaches to the Queen container and displays its logs
