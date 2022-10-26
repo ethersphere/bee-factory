@@ -13,7 +13,10 @@ let testFailed = false
 function wrapper(fn: () => Promise<unknown>): () => Promise<unknown> {
   return async () => {
     try {
-      return await fn()
+      const result = await fn()
+      testFailed = false
+
+      return result
     } catch (e) {
       testFailed = true
       throw e
@@ -37,6 +40,10 @@ describe('start command', () => {
 
   afterEach(async () => {
     if (testFailed) {
+      console.log('List of containers:')
+      const containers = await docker.listContainers()
+      containers.forEach(c => console.log(` - ${c.Names.join(', ')}`))
+
       await run(['logs', 'queen'])
     }
 

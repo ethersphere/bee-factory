@@ -38,5 +38,11 @@ jobs:
       - name: Install npm deps
         if: steps.cache-npm.outputs.cache-hit != 'true'
         run: npm ci
-      - name: Run node tests
+      - name: Run tests for older versions
+        if: matrix.node-version != '18.x'
+        run: npm test -- --bail true
+      - name: Run tests for Node 18
+        if: matrix.node-version == '18.x'
+        env:
+          NODE_OPTIONS: "--no-experimental-fetch"
         run: npm test -- --bail true

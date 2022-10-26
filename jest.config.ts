@@ -6,6 +6,11 @@ import type { Config } from '@jest/types'
 
 export default async (): Promise<Config.InitialOptions> => {
   return {
+    preset: 'ts-jest',
+    runner: '@ethersphere/jest-serial-runner',
+    testRegex: 'test/integration/.*\\.spec\\.ts',
+    testEnvironment: 'node',
+
     // Indicates whether the coverage information should be collected while executing the test
     // collectCoverage: false,
 
@@ -18,22 +23,9 @@ export default async (): Promise<Config.InitialOptions> => {
     // An array of directory names to be searched recursively up from the requiring module's location
     moduleDirectories: ['node_modules'],
 
-    // Run tests from one or more projects
-    projects: [
-      {
-        displayName: 'integration',
-        testEnvironment: 'node',
-        preset: 'ts-jest',
-
-        // Because of integration tests we have to run the tests serially
-        runner: '@codejedi365/jest-serial-runner',
-
-        testRegex: 'test/integration/.*\\.spec\\.ts',
-      },
-    ] as unknown[] as string[], // bad types
-
     // The root directory that Jest should scan for tests and modules within
     rootDir: 'test',
+
     // Increase timeout since we are spinning Bee containers
     testTimeout: 4 * 60 * 1000,
 
