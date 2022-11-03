@@ -44,6 +44,16 @@ build_bee() {
     "$MY_PATH/utils/build-image-tag.sh" set "$BEE_VERSION"
 }
 
+deploy_contracts_and_return_labels() {
+  LABELS=""
+
+  while IFS=$'\n' read -r contract; do
+    LABELS+=" --label org.ethswarm.beefactory.contracts.$(echo $contract | cut -d ":" -f 4)=$(echo $contract | cut -d ":" -f 5)"
+  done < <(npm run migrate:contracts | grep ^::CONTRACT)
+
+  echo "$LABELS"
+}
+
 MY_PATH=$(dirname "$0")
 MY_PATH=$( cd "$MY_PATH" && pwd )
 COMMIT_HASH=HEAD
@@ -106,7 +116,7 @@ if $BUILD_BASE_BEE ; then
 fi
 "$MY_PATH/network.sh"
 "$MY_PATH/blockchain.sh"
-npm run migrate:contracts
+DOCKER_CONTRACT_LABELS=$(deploy_contracts_and_return_labels)
 npm run supply
 chmod -R 777 "$MY_PATH/bee-data-dirs/"
 
@@ -138,5 +148,5 @@ if $GEN_TRAFFIC ; then
 
     export BLOCKCHAIN_VERSION+="-for-$BEE_VERSION"
 fi
-"$MY_PATH/bee-docker-build.sh"
+"$MY_PATH/bee-docker-build.sh" "$DOCKER_CONTRACT_LABELS"
 "$MY_PATH/blockchain-docker-build.sh"

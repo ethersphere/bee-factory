@@ -28,7 +28,7 @@ dockerbuild() {
 
   IMAGE_NAME=$(basename "$1")
   IMAGE_NAME="$4/$IMAGE_NAME"
-  docker build "$1" --no-cache -f "$2" -t "$IMAGE_NAME:$3" $PLATFORM_FLAG --label "org.ethswarm.beefactory.blockchain-version=$BLOCKCHAIN_VERSION"
+  docker build "$1" --no-cache -f "$2" -t "$IMAGE_NAME:$3" $PLATFORM_FLAG --label "org.ethswarm.beefactory.blockchain-version=$BLOCKCHAIN_VERSION" $5
 }
 
 MY_PATH=$(dirname "$0")
@@ -71,7 +71,7 @@ echo "Build Dockerfiles"
 for BEE_DIR in $BEE_DIRS
 do
   echo "Build Bee version $BEE_VERSION on $BEE_DIR"
-  dockerbuild "$BEE_DIR" "$MY_PATH/bee-data-dirs/Dockerfile" "$BEE_VERSION" "$BEE_IMAGE_PREFIX"
+  dockerbuild "$BEE_DIR" "$MY_PATH/bee-data-dirs/Dockerfile" "$BEE_VERSION" "$BEE_IMAGE_PREFIX" "$1"
 done
 
 echo "Docker image builds were successful!"
