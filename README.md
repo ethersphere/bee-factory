@@ -84,6 +84,35 @@ There are some ways you can make this module better:
 
 You can run the CLI while developing using `npm start -- <command> ...`.
 
+### Local images
+
+If you want to locally build the Bee Factory images, then edit the `./generator/scripts/.env` file with appropriate configuration
+and then run the `./generator/scripts/build-environment.sh` script. This will build the images with the `ethersphere/bee-factory-*` tags.
+Then simply run the `npm start -- <command>` with the appropriate version of Bee you have build.
+The CLI should pickup local images prior trying to pull it from Docker Hub, so it will use your build ones.
+
+### Updating Blockchain images
+
+If Bee updated its smart contracts suite, then smart contracts needs to be updated in Bee Factory as well otherwise the spawned Bees might
+have unpredictable behavior.
+
+First of all you have to preprocess the smart contract's bytecodes. In Solidity the constructor parameters are passed to the contract by appending the parameters
+ABI-encoded to the end of the bytecode (for more see for example [here](https://ethereum.stackexchange.com/questions/58866/how-does-a-contracts-constructor-work-and-load-input-values)).
+So you have to make sure that the bytecodes that you update are stripped of these constructor parameters.
+This is because these parameters are then later on appended during smart contract deployment.
+
+If only internal smart contract's logic has changed and there is no change to the smart contract's constructor, then you have to only
+update the bytecodes. You do it by pasting the bytecodes to appropriate files in `./generator/contracts/` folder.
+
+If there are new smart contracts or their constructor's have changed then you have to also modify the deploy script which is present in
+`./generator/migrations/1_initial.js` file. **Don't remove the logging that starts with `::CONTRACT:`!** This serves to extract the deployed
+contracts addresses and apply them to the Docker image's label.
+
+If you are adding new smart contract than also add new `::CONTRACT:` log line that has format of `::CONTRACT:<bee-option-name>:<smart-contract-address>`,
+where the `bee-option-name` stands for the option name that customize the contract's address in Bee.
+
+Last step is to bump the `BLOCKCHAIN_VERSION` version in `./generator/scripts/.env` file.
+
 ## Maintainers
 
 - [auhau](https://github.com/auhau)

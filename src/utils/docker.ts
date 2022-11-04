@@ -12,11 +12,7 @@ const NETWORK_NAME_SUFFIX = '-network'
 
 export const WORKER_COUNT = 4
 export const BLOCKCHAIN_VERSION_LABEL_KEY = 'org.ethswarm.beefactory.blockchain-version'
-
-// TODO: This should be possible to override with for example ENV variable in case somebody is rocking custom images
-const SWAP_FACTORY_ADDRESS = '0x5b1869D9A4C187F2EAa108f3062412ecf0526b24'
-const POSTAGE_STAMP_ADDRESS = '0xCfEB869F69431e42cdB54A4F4f105C19C080A601'
-const PRICE_ORACLE_ADDRESS = '0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B'
+export const CONTRACT_LABEL_KEY_PREFIX = 'org.ethswarm.beefactory.contracts.'
 
 export interface RunOptions {
   fresh: boolean
@@ -136,6 +132,7 @@ export class Docker {
 
   public async startQueenNode(beeVersion: string, options: RunOptions): Promise<void> {
     if (options.fresh) await this.removeContainer(this.queenName)
+    const contractAddresses = await this.getContractAddresses(this.queenImage(beeVersion))
 
     const container = await this.findOrCreateContainer(this.queenName, {
       Image: this.queenImage(beeVersion),
@@ -147,7 +144,7 @@ export class Docker {
       },
       Tty: true,
       Cmd: ['start'],
-      Env: this.createBeeEnvParameters(),
+      Env: this.createBeeEnvParameters(contractAddresses),
       AttachStderr: false,
       AttachStdout: false,
       HostConfig: {
@@ -179,6 +176,7 @@ export class Docker {
     options: RunOptions,
   ): Promise<void> {
     if (options.fresh) await this.removeContainer(this.workerName(workerNumber))
+    const contractAddresses = await this.getContractAddresses(this.workerImage(beeVersion, workerNumber))
 
     const container = await this.findOrCreateContainer(this.workerName(workerNumber), {
       Image: this.workerImage(beeVersion, workerNumber),
@@ -189,7 +187,7 @@ export class Docker {
         '1635/tcp': {},
       },
       Cmd: ['start'],
-      Env: this.createBeeEnvParameters(queenAddress),
+      Env: this.createBeeEnvParameters(contractAddresses, queenAddress),
       AttachStderr: false,
       AttachStdout: false,
       HostConfig: {
@@ -266,8 +264,7 @@ export class Docker {
 
   public async getBlockchainVersionFromQueenMetadata(beeVersion: string): Promise<string> {
     // Lets pull the Queen's image if it is not present
-    const pullStream = await this.docker.pull(this.queenImage(beeVersion))
-    await new Promise(res => this.docker.modem.followProgress(pullStream, res))
+    await this.pullImageIfNotFound(this.queenImage(beeVersion))
 
     const queenMetadata = await this.docker.getImage(this.queenImage(beeVersion)).inspect()
 
@@ -331,8 +328,7 @@ export class Docker {
       }
 
       this.console.info(`Image ${createOptions.Image} not found. Pulling it.`)
-      const pullStream = await this.docker.pull(createOptions.Image!)
-      await new Promise(res => this.docker.modem.followProgress(pullStream, res))
+      await this.pullImageIfNotFound(createOptions.Image!)
 
       return await this.docker.createContainer(createOptions)
     }
@@ -387,7 +383,7 @@ export class Docker {
     }
   }
 
-  private createBeeEnvParameters(bootnode?: string): string[] {
+  private createBeeEnvParameters(contractAddresses: Record<string, string>, bootnode?: string): string[] {
     const options: Record<string, string> = {
       'warmup-time': '0',
       'debug-api-enable': 'true',
@@ -395,14 +391,12 @@ export class Docker {
       'swap-enable': 'true',
       mainnet: 'false',
       'swap-endpoint': `http://${this.blockchainName}:9545`,
-      'swap-factory-address': SWAP_FACTORY_ADDRESS,
       password: 'password',
-      'postage-stamp-address': POSTAGE_STAMP_ADDRESS,
-      'price-oracle-address': PRICE_ORACLE_ADDRESS,
       'network-id': '4020',
       'full-node': 'true',
       'welcome-message': 'You have found the queen of the beehive...',
       'cors-allowed-origins': '*',
+      ...contractAddresses,
     }
 
     if (bootnode) {
@@ -416,5 +410,31 @@ export class Docker {
 
       return previous
     }, [])
+  }
+
+  private async pullImageIfNotFound(name: string): Promise<void> {
+    try {
+      await this.docker.getImage(name)
+    } catch (e) {
+      const pullStream = await this.docker.pull(name)
+
+      await new Promise(res => this.docker.modem.followProgress(pullStream, res))
+    }
+  }
+
+  private async getContractAddresses(imageName: string): Promise<Record<string, string>> {
+    await this.pullImageIfNotFound(imageName)
+    const imageMetadata = await this.docker.getImage(imageName).inspect()
+
+    const contractAddresses: Record<string, string> = {}
+
+    // @ts-ignore: Dockerode typings does not have iterator even though it is a simple object
+    for (const [labelKey, labelValue] of Object.entries(imageMetadata.Config.Labels)) {
+      if (labelKey.startsWith(CONTRACT_LABEL_KEY_PREFIX)) {
+        contractAddresses[labelKey.replace(CONTRACT_LABEL_KEY_PREFIX, '')] = labelValue
+      }
+    }
+
+    return contractAddresses
   }
 }
