@@ -38,6 +38,7 @@ BEE_VERSION=$("$MY_PATH/utils/env-variable-value.sh" BEE_VERSION)
 BEE_IMAGE_PREFIX=$("$MY_PATH/utils/env-variable-value.sh" BEE_IMAGE_PREFIX)
 STATE_COMMIT=$("$MY_PATH/utils/env-variable-value.sh" STATE_COMMIT)
 OFFICIAL_BEE_IMAGE="ethersphere/bee:$BEE_VERSION"
+CONTRACT_ADDRESSES="$1"
 
 # Make sure we the user has permission all the files
 echo "Build Bee Docker images..."
@@ -67,11 +68,18 @@ fi
 
 ### BEE_VERSION ALERNATIONS END
 
+CONTRACT_ADDRESSES_LABELS=""
+IFS=';' array=($CONTRACT_ADDRESSES)
+for element in "${array[@]}";
+do
+ CONTRACT_ADDRESSES_LABELS+=" --label org.ethswarm.beefactory.contracts.${element}"
+done
+
 echo "Build Dockerfiles"
 for BEE_DIR in $BEE_DIRS
 do
   echo "Build Bee version $BEE_VERSION on $BEE_DIR"
-  dockerbuild "$BEE_DIR" "$MY_PATH/bee-data-dirs/Dockerfile" "$BEE_VERSION" "$BEE_IMAGE_PREFIX" "$1"
+  dockerbuild "$BEE_DIR" "$MY_PATH/bee-data-dirs/Dockerfile" "$BEE_VERSION" "$BEE_IMAGE_PREFIX" "$CONTRACT_ADDRESSES_LABELS"
 done
 
 echo "Docker image builds were successful!"
