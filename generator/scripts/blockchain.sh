@@ -21,7 +21,7 @@ if [ -z "$CONTAINER_IN_DOCKER" ]; then
       --wallet.deterministic --chain.networkId 4020 -h 0.0.0.0 -p 9545 \
       --miner.blockTime 2 \
       --chain.chainId 4020 \
-      --database.dbPath swarm-testchain --miner.blockGasLimit 6721975
+      --database.dbPath swarm-testchain --miner.blockGasLimit 16721975
 else
   docker start $NAME
 fi

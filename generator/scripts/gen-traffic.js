@@ -17,7 +17,7 @@ class BeePair {
 
 const SLEEP_BETWEEN_UPLOADS_MS = 1000
 const POSTAGE_STAMPS_AMOUNT = '10000'
-const POSTAGE_STAMPS_DEPTH = 32
+const POSTAGE_STAMPS_DEPTH = 22
 
 /**
  * Lehmer random number generator with seed (minstd_rand in C++11)
@@ -57,22 +57,6 @@ async function uploadRandomBytes(beePair, seed = 500, bytes = 1024 * 4 * 400) {
   console.log(`${beePair.uploaderBee.url} uploaded ${bytes} bytes to ${reference}`)
 }
 
-const DEFAULT_POLLING_FREQUENCY = 1_000
-const DEFAULT_STAMP_USABLE_TIMEOUT = 120_000
-async function waitUntilStampUsable(batchId, beeDebug, options = {}) {
-  const timeout = options?.timeout || DEFAULT_STAMP_USABLE_TIMEOUT
-  const pollingFrequency = options?.pollingFrequency || DEFAULT_POLLING_FREQUENCY
-
-  for (let i = 0; i < timeout; i += pollingFrequency) {
-    const stamp = await beeDebug.getPostageBatch(batchId)
-
-    if (stamp.usable) return stamp
-    await sleep(pollingFrequency)
-  }
-
-  throw new Error('Wait until stamp usable timeout has been reached')
-}
-
 /**
  * Generate traffic on Bee node(s)
  *
@@ -107,11 +91,10 @@ async function genTrafficLoop(hosts, minCheques) {
     const uploaderBeeDebug = new BeeDebug(uploaderBeeDebugUrl)
 
     console.log(`Creating postage stamp on ${uploaderBeeDebugUrl}...`)
-    const postageBatchId = await uploaderBeeDebug.createPostageBatch(POSTAGE_STAMPS_AMOUNT, POSTAGE_STAMPS_DEPTH)
-    console.log(`Generated ${postageBatchId} postage stamp on ${uploaderBeeDebugUrl}. Waiting until it is usable.`)
-
-    await waitUntilStampUsable(postageBatchId, uploaderBeeDebug)
-    console.log('Postage stamp usable.')
+    const postageBatchId = await uploaderBeeDebug.createPostageBatch(POSTAGE_STAMPS_AMOUNT, POSTAGE_STAMPS_DEPTH, {
+      waitForUsable: true,
+    })
+    console.log(`Generated ${postageBatchId} postage stamp on ${uploaderBeeDebugUrl}.`)
 
     return new BeePair(chequeReceiverBeeDebug, uploaderBee, uploaderBeeDebug, postageBatchId)
   })
