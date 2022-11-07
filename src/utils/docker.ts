@@ -104,6 +104,7 @@ export class Docker {
 
   public async startBlockchainNode(blockchainVersion: string, options: RunOptions): Promise<void> {
     if (options.fresh) await this.removeContainer(this.blockchainName)
+    await this.pullImageIfNotFound(this.blockchainImage(blockchainVersion))
 
     const container = await this.findOrCreateContainer(this.blockchainName, {
       Image: this.blockchainImage(blockchainVersion),
@@ -132,8 +133,9 @@ export class Docker {
 
   public async startQueenNode(beeVersion: string, options: RunOptions): Promise<void> {
     if (options.fresh) await this.removeContainer(this.queenName)
-    const contractAddresses = await this.getContractAddresses(this.queenImage(beeVersion))
+    await this.pullImageIfNotFound(this.queenImage(beeVersion))
 
+    const contractAddresses = await this.getContractAddresses(this.queenImage(beeVersion))
     const container = await this.findOrCreateContainer(this.queenName, {
       Image: this.queenImage(beeVersion),
       name: this.queenName,
@@ -176,8 +178,9 @@ export class Docker {
     options: RunOptions,
   ): Promise<void> {
     if (options.fresh) await this.removeContainer(this.workerName(workerNumber))
-    const contractAddresses = await this.getContractAddresses(this.workerImage(beeVersion, workerNumber))
+    await this.pullImageIfNotFound(this.workerImage(beeVersion, workerNumber))
 
+    const contractAddresses = await this.getContractAddresses(this.workerImage(beeVersion, workerNumber))
     const container = await this.findOrCreateContainer(this.workerName(workerNumber), {
       Image: this.workerImage(beeVersion, workerNumber),
       name: this.workerName(workerNumber),
@@ -414,8 +417,9 @@ export class Docker {
 
   private async pullImageIfNotFound(name: string): Promise<void> {
     try {
-      await this.docker.getImage(name)
+      await this.docker.getImage(name).inspect()
     } catch (e) {
+      this.console.info(`Image ${name} not found locally, pulling it.`)
       const pullStream = await this.docker.pull(name)
 
       await new Promise(res => this.docker.modem.followProgress(pullStream, res))
@@ -423,7 +427,6 @@ export class Docker {
   }
 
   private async getContractAddresses(imageName: string): Promise<Record<string, string>> {
-    await this.pullImageIfNotFound(imageName)
     const imageMetadata = await this.docker.getImage(imageName).inspect()
 
     const contractAddresses: Record<string, string> = {}
