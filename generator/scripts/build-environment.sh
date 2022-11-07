@@ -44,14 +44,14 @@ build_bee() {
     "$MY_PATH/utils/build-image-tag.sh" set "$BEE_VERSION"
 }
 
-deploy_contracts_and_return_labels() {
-  LABELS=""
+deploy_contracts_and_return_addresses() {
+  CONTRACT_ADDRESSES=""
 
   while IFS=$'\n' read -r contract; do
-    LABELS+=" --label org.ethswarm.beefactory.contracts.$(echo $contract | cut -d ":" -f 4)=$(echo $contract | cut -d ":" -f 5)"
+    CONTRACT_ADDRESSES+="$(echo $contract | cut -d ":" -f 4)=$(echo $contract | cut -d ":" -f 5);"
   done < <(npm run migrate:contracts | grep ^::CONTRACT)
 
-  echo "$LABELS"
+  echo "$CONTRACT_ADDRESSES"
 }
 
 MY_PATH=$(dirname "$0")
@@ -116,7 +116,7 @@ if $BUILD_BASE_BEE ; then
 fi
 "$MY_PATH/network.sh"
 "$MY_PATH/blockchain.sh"
-DOCKER_CONTRACT_LABELS=$(deploy_contracts_and_return_labels)
+CONTRACT_ADDRESSES=$(deploy_contracts_and_return_addresses)
 npm run supply
 chmod -R 777 "$MY_PATH/bee-data-dirs/"
 
@@ -125,7 +125,7 @@ if $GEN_TRAFFIC ; then
     echo "Bee image with special state will be commited... traffic generation is on."
     # give the permission to the bee user
     echo "Start Bee nodes so that traffic can be generated and commited to the images"
-    "$MY_PATH/bee.sh" start --version="$BEE_VERSION" --workers=$SUPPORTED_WORKER_N --detach
+    "$MY_PATH/bee.sh" start --version="$BEE_VERSION" --workers=$SUPPORTED_WORKER_N --contract-addrs=$CONTRACT_ADDRESSES --detach
     echo "Generating traffic on Bee node $GEN_TRAFFIC_UPLOAD_NODE"
     echo "Run traffic generation until $CHEQUES_COUNT incoming cheques will arrive to node under Debug API $GEN_TRAFFIC_CHECKER_NODE_DEBUG"
     npm run gen:traffic -- "$CHEQUES_COUNT" "$GEN_TRAFFIC_CHECKER_NODE_DEBUG;$GEN_TRAFFIC_UPLOAD_NODE;$GEN_TRAFFIC_UPLOAD_NODE_DEBUG"
@@ -148,5 +148,5 @@ if $GEN_TRAFFIC ; then
 
     export BLOCKCHAIN_VERSION+="-for-$BEE_VERSION"
 fi
-"$MY_PATH/bee-docker-build.sh" "$DOCKER_CONTRACT_LABELS"
+"$MY_PATH/bee-docker-build.sh" "$CONTRACT_ADDRESSES"
 "$MY_PATH/blockchain-docker-build.sh"
