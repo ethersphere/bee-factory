@@ -69,11 +69,13 @@ fi
 ### BEE_VERSION ALERNATIONS END
 
 CONTRACT_ADDRESSES_LABELS=""
+OLD_IFS=$IFS
 IFS=';' array=($CONTRACT_ADDRESSES)
 for element in "${array[@]}";
 do
  CONTRACT_ADDRESSES_LABELS+=" --label org.ethswarm.beefactory.contracts.${element}"
 done
+IFS=$OLD_IFS
 
 echo "Build Dockerfiles"
 for BEE_DIR in $BEE_DIRS

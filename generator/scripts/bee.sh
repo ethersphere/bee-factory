@@ -204,11 +204,13 @@ if $EPHEMERAL ; then
 fi
 
 CONTRACT_ADDRESSES_ARGS=""
+OLD_IFS=$IFS
 IFS=';' array=($CONTRACT_ADDRESSES)
 for element in "${array[@]}";
 do
  CONTRACT_ADDRESSES_ARGS+=" --${element}"
 done
+IFS=$OLD_IFS
 
 # Start Bee Queen
 if [ -z "$QUEEN_CONTAINER_IN_DOCKER" ] || $EPHEMERAL ; then
