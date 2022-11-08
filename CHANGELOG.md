@@ -2,6 +2,7 @@
 
 ## [0.5.0](https://github.com/ethersphere/bee-factory/compare/v0.4.1...v0.5.0) (2022-11-08)
 
+This is a bigger breaking release that brings support for the Bee 1.9. It is not compatible with the earlier Bee's version.
 
 ### Features
 
