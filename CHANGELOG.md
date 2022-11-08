@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.5.0](https://github.com/ethersphere/bee-factory/compare/v0.4.1...v0.5.0) (2022-11-08)
+
+
+### Features
+
+* increased nodes funding ([#221](https://github.com/ethersphere/bee-factory/issues/221)) ([86e8649](https://github.com/ethersphere/bee-factory/commit/86e86491d460536015425be5f5a91d06e19db694))
+* latest builds ([#150](https://github.com/ethersphere/bee-factory/issues/150)) ([2ef924d](https://github.com/ethersphere/bee-factory/commit/2ef924d615cfc1a612cb9167a28037918114597e))
+* queen image has postage stamp bought ([#220](https://github.com/ethersphere/bee-factory/issues/220)) ([ffbfaa2](https://github.com/ethersphere/bee-factory/commit/ffbfaa2cfa4dc57dd7bc4d1c09debabf450a0d86))
+* supported bee version check ([#223](https://github.com/ethersphere/bee-factory/issues/223)) ([4b02910](https://github.com/ethersphere/bee-factory/commit/4b029108efa70314656e05b10220adf7f0b3958b))
+* update blockchain image and contracts addresses are in labels ([#214](https://github.com/ethersphere/bee-factory/issues/214)) ([a7eb6c6](https://github.com/ethersphere/bee-factory/commit/a7eb6c6d05d35dd44f08e7c3641cf3721a5d9d28))
+
+
+### Bug Fixes
+
+* invalid mode and gas block limit ([#217](https://github.com/ethersphere/bee-factory/issues/217)) ([b8f3039](https://github.com/ethersphere/bee-factory/commit/b8f30398a425be75113056830ff6f4fb787c996b))
+* state generation of docker images ([#216](https://github.com/ethersphere/bee-factory/issues/216)) ([7dc8992](https://github.com/ethersphere/bee-factory/commit/7dc8992df7c92320b7c20c9001b02bd05918d846))
+
 ### [0.4.1](https://www.github.com/ethersphere/bee-factory/compare/v0.4.0...v0.4.1) (2022-05-24)
 
 
