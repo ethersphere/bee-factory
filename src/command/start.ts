@@ -12,6 +12,8 @@ import { waitForBlockchain, waitForQueen, waitForWorkers } from '../utils/wait'
 import ora from 'ora'
 import { VerbosityLevel } from './root-command/logging'
 import { findBeeVersion, stripCommit } from '../utils/config-sources'
+import PackageJson from '../../package.json'
+import semver from 'semver'
 
 const DEFAULT_REPO = 'ethersphere'
 
@@ -101,6 +103,13 @@ export class Start extends RootCommand implements LeafCommand {
     }
 
     this.beeVersion = stripCommit(this.beeVersion)
+    const supportedBeeVersion = PackageJson.engines.supportedBee
+
+    if (!semver.satisfies(this.beeVersion, supportedBeeVersion)) {
+      throw new Error(
+        `Unsupported Bee version!\nThis version of Bee Factory supports versions: ${supportedBeeVersion}, but you have requested start of ${this.beeVersion}`,
+      )
+    }
 
     const dockerOptions = await this.buildDockerOptions()
     const docker = new Docker(this.console, this.envPrefix, this.imagePrefix, this.repo)
