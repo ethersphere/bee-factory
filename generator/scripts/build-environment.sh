@@ -131,6 +131,10 @@ if $GEN_TRAFFIC ; then
     npm run gen:traffic -- "$CHEQUES_COUNT" "$GEN_TRAFFIC_CHECKER_NODE_DEBUG;$GEN_TRAFFIC_UPLOAD_NODE;$GEN_TRAFFIC_UPLOAD_NODE_DEBUG"
     echo "traffic has been generated"
 
+    echo "Adding postage stamp to Queen"
+    npx swarm-cli stamp buy --yes --quiet --depth 22 --amount 1_000_000 --label "==testingStamp=="
+    echo "Stamp bought"
+
     # This sets output parameter in Github Actions that
     # is then used to trigger Bee-js PR creation
     if [ "$CI" == 'true' ]; then
