@@ -29,8 +29,16 @@ function getPostageStampBin(tokenAddress) {
   return bin + tokenAddress
 }
 
-function getPriceOracleBin(price, chequeValueDeduction) {
-  const binPath = Path.join(__dirname, '..', 'contracts', 'PriceOracle.bytecode')
+function getPostagePriceOracleBin(tokenAddress) {
+  const binPath = Path.join(__dirname, '..', 'contracts', 'PostagePriceOracle.bytecode')
+  const bin = FS.readFileSync(binPath, 'utf8').toString().trim()
+  tokenAddress = prefixedAddressParamToByteCode(tokenAddress)
+  //add tokenaddress for param to the end of the bytecode
+  return bin + tokenAddress
+}
+
+function getSwapPriceOracleBin(price, chequeValueDeduction) {
+  const binPath = Path.join(__dirname, '..', 'contracts', 'SwapPriceOracle.bytecode')
   const bin = FS.readFileSync(binPath, 'utf8').toString().trim()
   const priceAbi = intToByteCode(price)
   const chequeValueAbi = intToByteCode(chequeValueDeduction)
@@ -47,13 +55,14 @@ function getStakeRegistryBin(tokenAddress) {
   return bin + tokenAddress + networkIdAbi
 }
 
-function getRedistributionBin(stakingAddress, postageContractAddress) {
+function getRedistributionBin(stakingAddress, postageContractAddress, oracleContractAddress) {
   const binPath = Path.join(__dirname, '..', 'contracts', 'Redistribution.bytecode')
   const bin = FS.readFileSync(binPath, 'utf8').toString().trim()
   stakingAddress = prefixedAddressParamToByteCode(stakingAddress)
   postageContractAddress = prefixedAddressParamToByteCode(postageContractAddress)
-  //add staking address and postage address for param to the end of the bytecode
-  return bin + stakingAddress + postageContractAddress
+  oracleContractAddress = prefixedAddressParamToByteCode(oracleContractAddress)
+  //add staking address, postage address and oracle contract address for param to the end of the bytecode
+  return bin + stakingAddress + postageContractAddress + oracleContractAddress
 }
 
 /** Returns back contract hash */
@@ -74,7 +83,10 @@ async function createContract(contractName, data, creatorAccount, configName) {
       `\tTransaction ID: ${transaction.transactionHash}\n` +
       `\tContract ID: ${transaction.contractAddress}`,
   )
-  console.log(`::CONTRACT:${configName}:${transaction.contractAddress}\n`)
+
+  if (configName) {
+    console.log(`::CONTRACT:${configName}:${transaction.contractAddress}\n`)
+  }
 
   return transaction.contractAddress
 }
@@ -83,7 +95,7 @@ module.exports = function (deployer, network, accounts) {
   const creatorAccount = accounts[0]
 
   deployer.deploy(ERC20PresetMinterPauser, 'Swarm Token', 'BZZ').then(async () => {
-    await createContract('PriceOracle', getPriceOracleBin(100000, 100), creatorAccount, 'price-oracle-address')
+    await createContract('SwapPriceOracle', getSwapPriceOracleBin(100000, 100), creatorAccount, 'price-oracle-address')
     await createContract(
       'SimpleSwapFactory',
       getSimpleSwapFactoryBin(ERC20PresetMinterPauser.address),
@@ -98,16 +110,22 @@ module.exports = function (deployer, network, accounts) {
       'postage-stamp-address',
     )
 
+    const postagePriceOracleAddress = await createContract(
+      'PostagePriceOracle',
+      getPostagePriceOracleBin(ERC20PresetMinterPauser.address),
+      creatorAccount,
+    )
+
     const stakeRegistryAddress = await createContract(
       'StakeRegistry',
-      getStakeRegistryBin(ERC20PresetMinterPauser.address, accounts[0]),
+      getStakeRegistryBin(ERC20PresetMinterPauser.address),
       creatorAccount,
       'staking-address',
     )
 
     await createContract(
       'Redistribution',
-      getRedistributionBin(stakeRegistryAddress, postageStampAddress),
+      getRedistributionBin(stakeRegistryAddress, postageStampAddress, postagePriceOracleAddress),
       creatorAccount,
       'redistribution-address',
     )
