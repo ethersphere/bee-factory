@@ -90,6 +90,8 @@ async function genTrafficLoop(hosts, minCheques) {
     const uploaderBee = new Bee(uploaderBeeUrl)
     const uploaderBeeDebug = new BeeDebug(uploaderBeeDebugUrl)
 
+    console.log(`Depositing 10 BZZ to Chequebook on ${uploaderBeeDebugUrl}...`)
+    await uploaderBeeDebug.depositTokens('1000000000000000000')
     console.log(`Creating postage stamp on ${uploaderBeeDebugUrl}...`)
     const postageBatchId = await uploaderBeeDebug.createPostageBatch(POSTAGE_STAMPS_AMOUNT, POSTAGE_STAMPS_DEPTH, {
       waitForUsable: true,
