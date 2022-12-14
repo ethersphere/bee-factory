@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/ethersphere/bee-factory/compare/v0.5.0...v0.5.1) (2022-12-14)
+
+
+### Bug Fixes
+
+* allow multiple digits versions ([#233](https://github.com/ethersphere/bee-factory/issues/233)) ([4058525](https://github.com/ethersphere/bee-factory/commit/4058525ab6ca0168d036691676302dc0bc3f0702))
+
 ## [0.5.0](https://github.com/ethersphere/bee-factory/compare/v0.4.1...v0.5.0) (2022-11-08)
 
 This is a bigger breaking release that brings support for the Bee 1.9. It is not compatible with the earlier Bee's version.
