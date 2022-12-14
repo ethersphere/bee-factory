@@ -105,7 +105,7 @@ export class Start extends RootCommand implements LeafCommand {
     this.beeVersion = stripCommit(this.beeVersion)
     const supportedBeeVersion = PackageJson.engines.supportedBee
 
-    if (!semver.satisfies(this.beeVersion, supportedBeeVersion)) {
+    if (!semver.satisfies(this.beeVersion, supportedBeeVersion, { includePrerelease: true })) {
       throw new Error(
         `Unsupported Bee version!\nThis version of Bee Factory supports versions: ${supportedBeeVersion}, but you have requested start of ${this.beeVersion}`,
       )
