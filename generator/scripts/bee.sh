@@ -251,6 +251,7 @@ if [ -z "$QUEEN_CONTAINER_IN_DOCKER" ] || $EPHEMERAL ; then
         --full-node=true \
         --welcome-message="You have found the queen of the beehive..." \
         --cors-allowed-origins="*" \
+        --postage-stamp-start-block=1 \
         $CONTRACT_ADDRESSES_ARGS
 else
     docker start "$QUEEN_CONTAINER_IN_DOCKER"
@@ -301,6 +302,7 @@ for i in $(seq 1 1 "$WORKERS"); do
           --full-node=true \
           --welcome-message="I'm just Bee worker ${i} in the beehive." \
           --cors-allowed-origins="*" \
+          --postage-stamp-start-block=1 \
           $CONTRACT_ADDRESSES_ARGS
   else
         docker start "$WORKER_CONTAINER_IN_DOCKER"
