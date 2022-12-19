@@ -399,6 +399,7 @@ export class Docker {
       'full-node': 'true',
       'welcome-message': 'You have found the queen of the beehive...',
       'cors-allowed-origins': '*',
+      'postage-stamp-start-block': '1',
       ...contractAddresses,
     }
 
