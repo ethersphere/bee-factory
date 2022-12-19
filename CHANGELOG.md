@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/ethersphere/bee-factory/compare/v0.5.1...v0.5.2) (2022-12-19)
+
+
+### Bug Fixes
+
+* add postage contract start block ([#235](https://github.com/ethersphere/bee-factory/issues/235)) ([0fa8acf](https://github.com/ethersphere/bee-factory/commit/0fa8acfd1bb74a655fcb7a03e5a8605f6b7c0b75))
+
 ## [0.5.1](https://github.com/ethersphere/bee-factory/compare/v0.5.0...v0.5.1) (2022-12-14)
 
 
