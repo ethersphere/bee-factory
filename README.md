@@ -117,7 +117,6 @@ Last step is to bump the `BLOCKCHAIN_VERSION` version in `./generator/scripts/.e
 
 ## Maintainers
 
-- [auhau](https://github.com/auhau)
 - [Cafe137](https://github.com/cafe137)
 
 ## License
