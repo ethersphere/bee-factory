@@ -1,3 +1,5 @@
+**This project is superseded by [fdp-play](https://github.com/fairDataSociety/fdp-play) and is no longer maintained.**
+
 # Bee Factory
 
 [![Tests](https://github.com/ethersphere/bee-factory/actions/workflows/test.yaml/badge.svg)](https://github.com/ethersphere/bee-factory/actions/workflows/test.yaml)
