@@ -1,0 +1,43 @@
+{
+  "contractName": "SwapPriceOracle",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "currentPrice",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getPrice",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "price",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "updatedAt",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x608060405234801561001057600080fd5b5060cc8061001f6000396000f3fe6080604052348015600f57600080fd5b506004361060325760003560e01c806331d98b3f1460375780639d1b464a14606a575b600080fd5b60506042366004607e565b5066038d7ea4c68000904290565b604080519283526020830191909152015b60405180910390f35b60405166038d7ea4c6800081526020016061565b600060208284031215608f57600080fd5b503591905056fea2646970667358221220a6545b508e7eb2d6662599bef44a65e9883d0a1079d3957f016713611ddcf59064736f6c63430008130033"
+}
