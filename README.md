@@ -10,7 +10,7 @@ Local Ethereum Swarm development stack — 5 Bee nodes + Anvil blockchain, fully
 ## Install
 
 ```sh
-npm install -g bee-factory
+npm install -g @ethersphere/bee-factory
 ```
 
 ## Usage
