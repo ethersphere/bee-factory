@@ -1,7 +1,7 @@
 # Overview
 
 -   This project is called bee-factory.
--   It is a CLI tool written in TypeScript/Node.js (requires Node.js ≥ 18), distributed as an npm package (`npx bee-factory`).
+-   It is a CLI tool written in TypeScript/Node.js (requires Node.js ≥ 18), distributed as an npm package (`npx @ethersphere/bee-factory`).
 -   Its purpose is to run a local stack of Bee nodes for Ethereum Swarm development.
 -   A Bee node is the official Swarm client implementation.
 -   The tool uses Docker to run Bee nodes and a local blockchain to simulate the Ethereum network.
