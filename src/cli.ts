@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { DEFAULT_BLOCK_TIME } from './config';
+import { DEFAULT_BLOCK_TIME_IN_SECONDS } from './config';
 
 yargs(hideBin(process.argv))
   .command(
@@ -21,7 +21,7 @@ yargs(hideBin(process.argv))
         })
         .option('block-time', {
           type: 'number',
-          default: DEFAULT_BLOCK_TIME,
+          default: DEFAULT_BLOCK_TIME_IN_SECONDS,
           description: 'Block time in seconds for the local blockchain (Anvil).',
         }),
     async (argv) => {

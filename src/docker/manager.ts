@@ -14,7 +14,7 @@ import {
   BEE_NODE_PASSWORD,
   BEE_REPO_URL,
   BEE_LOCAL_IMAGE,
-  DEFAULT_BLOCK_TIME,
+  DEFAULT_BLOCK_TIME_IN_SECONDS,
   NodeConfig,
 } from '../config';
 
@@ -153,7 +153,7 @@ export async function startAnvil(blockTime?: number | undefined): Promise<void> 
     '--chain-id', String(CHAIN_ID),
     '--accounts', '20',
     '--balance', '10000',
-    '--block-time', `${blockTime || DEFAULT_BLOCK_TIME}`,
+    '--block-time', `${blockTime || DEFAULT_BLOCK_TIME_IN_SECONDS}`,
   ].join(' ');
 
   const container = await docker.createContainer({
@@ -190,7 +190,7 @@ function buildBeeCmd(
     `--api-addr=:${config.apiPort}`,
     `--p2p-addr=:${config.p2pPort}`,
     `--blockchain-rpc-endpoint=http://anvil:${ANVIL_PORT}`,
-    `--block-time=${blockTime || DEFAULT_BLOCK_TIME}`,
+    `--block-time=${blockTime || DEFAULT_BLOCK_TIME_IN_SECONDS}`,
     `--password=${BEE_NODE_PASSWORD}`,
     '--verbosity=5',
     `--network-id=${CHAIN_ID}`,
