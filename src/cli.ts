@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
+import { DEFAULT_BLOCK_TIME } from './config';
 
 yargs(hideBin(process.argv))
   .command(
@@ -17,11 +18,16 @@ yargs(hideBin(process.argv))
           type: 'boolean',
           default: false,
           description: 'Ignore bundled snapshot and redeploy contracts from scratch (also saves a new snapshot)',
+        })
+        .option('block-time', {
+          type: 'number',
+          default: DEFAULT_BLOCK_TIME,
+          description: 'Block time in seconds for the local blockchain (Anvil).',
         }),
     async (argv) => {
       try {
         const { start } = await import('./commands/start');
-        await start({ tag: argv.tag as string, fresh: argv.fresh as boolean });
+        await start({ tag: argv.tag as string, fresh: argv.fresh as boolean, blockTime: argv.blockTime as number });
       } catch (err) {
         const chalk = (await import('chalk')).default;
         console.error(chalk.red('\nFatal error:'), String(err));

@@ -14,6 +14,7 @@ import {
   BEE_NODE_PASSWORD,
   BEE_REPO_URL,
   BEE_LOCAL_IMAGE,
+  DEFAULT_BLOCK_TIME,
   NodeConfig,
 } from '../config';
 
@@ -141,7 +142,7 @@ export async function stopAndRemoveContainer(name: string): Promise<void> {
   await removeContainerIfExists(name);
 }
 
-export async function startAnvil(): Promise<void> {
+export async function startAnvil(blockTime?: number | undefined): Promise<void> {
   await removeContainerIfExists(ANVIL_CONTAINER);
 
   // The foundry image uses ENTRYPOINT ["/bin/sh", "-c"], so Cmd must be a
@@ -152,7 +153,7 @@ export async function startAnvil(): Promise<void> {
     '--chain-id', String(CHAIN_ID),
     '--accounts', '20',
     '--balance', '10000',
-    '--block-time', '5',
+    '--block-time', `${blockTime || DEFAULT_BLOCK_TIME}`,
   ].join(' ');
 
   const container = await docker.createContainer({
@@ -180,7 +181,8 @@ export async function startAnvil(): Promise<void> {
 function buildBeeCmd(
   config: NodeConfig,
   contractAddresses: ContractAddresses,
-  bootnodeAddr?: string
+  bootnodeAddr?: string,
+  blockTime?: number | undefined
 ): string[] {
   const cmd: string[] = [
     'start',
@@ -188,6 +190,7 @@ function buildBeeCmd(
     `--api-addr=:${config.apiPort}`,
     `--p2p-addr=:${config.p2pPort}`,
     `--blockchain-rpc-endpoint=http://anvil:${ANVIL_PORT}`,
+    `--block-time=${blockTime || DEFAULT_BLOCK_TIME}`,
     `--password=${BEE_NODE_PASSWORD}`,
     '--verbosity=5',
     `--network-id=${CHAIN_ID}`,
@@ -218,13 +221,14 @@ export async function startBeeNodeWithTag(
   contractAddresses: ContractAddresses,
   keystoreDir: string,
   tag: string,
-  bootnodeAddr?: string
+  bootnodeAddr?: string,
+  blockTime?: number | undefined
 ): Promise<void> {
   await removeContainerIfExists(config.name);
 
   const hostname = config.name.replace(/^bee-factory-/, '');
   const image = `${BEE_LOCAL_IMAGE}:${tag}`;
-  const cmd = buildBeeCmd(config, contractAddresses, bootnodeAddr);
+  const cmd = buildBeeCmd(config, contractAddresses, bootnodeAddr, blockTime);
 
   const exposedPorts: Record<string, object> = {
     [`${config.apiPort}/tcp`]: {},

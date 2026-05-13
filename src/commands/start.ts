@@ -30,10 +30,11 @@ import {
 export interface StartOptions {
   tag: string;
   fresh: boolean;
+  blockTime: number | undefined;
 }
 
 export async function start(options: StartOptions): Promise<void> {
-  const { tag, fresh } = options;
+  const { tag, fresh, blockTime } = options;
 
   console.log(chalk.bold.cyan('\nbee-factory — Local Bee Stack'));
   console.log(chalk.dim('────────────────────────────────────────\n'));
@@ -99,8 +100,9 @@ export async function start(options: StartOptions): Promise<void> {
   // 5. Start Anvil
   {
     const spinner = ora('Starting Anvil blockchain...').start();
+    console.log(chalk.dim(`\n  Block time: ${blockTime ?? 'default (1)'} seconds\n`));
     try {
-      await startAnvil();
+      await startAnvil(blockTime);
       spinner.text = 'Waiting for Anvil RPC to be ready...';
       await waitForHttp(`http://localhost:${ANVIL_PORT}`, 60_000);
       spinner.succeed(chalk.green(`Anvil running on port ${ANVIL_PORT}.`));
@@ -195,7 +197,7 @@ export async function start(options: StartOptions): Promise<void> {
   {
     const spinner = ora(`Starting queen node (${queen.name})...`).start();
     try {
-      await startBeeNodeWithTag(queen, addresses, keystoreMap.get(0)!, tag);
+      await startBeeNodeWithTag(queen, addresses, keystoreMap.get(0)!, tag, undefined, blockTime);
       spinner.text = `Waiting for queen API at port ${queen.apiPort}...`;
       await waitForContainerHttp(queen.name, `http://localhost:${queen.apiPort}/health`, 120_000);
       spinner.succeed(chalk.green(`Queen node API ready on port ${queen.apiPort}.`));
@@ -224,7 +226,7 @@ export async function start(options: StartOptions): Promise<void> {
     const spinner = ora('Starting worker nodes...').start();
     try {
       await Promise.all(workers.map(async (node) => {
-        await startBeeNodeWithTag(node, addresses, keystoreMap.get(node.index)!, tag, queenBootnode);
+        await startBeeNodeWithTag(node, addresses, keystoreMap.get(node.index)!, tag, queenBootnode, blockTime);
         await waitForContainerHttp(node.name, `http://localhost:${node.apiPort}/health`, 120_000);
         spinner.info(chalk.green(`${node.name} API ready on port ${node.apiPort}.`));
         spinner.start('Starting worker nodes...');
@@ -279,9 +281,9 @@ function printSummary(addresses: ContractAddresses, tag: string): void {
   for (const row of rows) {
     console.log(
       '  ' +
-        chalk.yellow(row[0].padEnd(20)) +
-        chalk.white(row[1].padEnd(12)) +
-        chalk.white(row[2])
+      chalk.yellow(row[0].padEnd(20)) +
+      chalk.white(row[1].padEnd(12)) +
+      chalk.white(row[2])
     );
   }
 

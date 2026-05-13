@@ -3,6 +3,7 @@ export const ANVIL_CONTAINER = 'bee-factory-anvil';
 export const ANVIL_IMAGE = 'ghcr.io/foundry-rs/foundry:latest';
 export const ANVIL_PORT = 8545;
 export const CHAIN_ID = 1337;
+export const DEFAULT_BLOCK_TIME = 1; // 1 second block time for testing
 
 export const BEE_REPO_URL = 'https://github.com/ethersphere/bee.git';
 export const BEE_LOCAL_IMAGE = 'bee-factory/bee';
