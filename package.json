@@ -2,9 +2,16 @@
   "name": "@ethersphere/bee-factory",
   "version": "0.5.2",
   "description": "Local Ethereum Swarm development stack",
-  "bin": { "bee-factory": "./bin/bee-factory.js" },
+  "bin": {
+    "bee-factory": "./bin/bee-factory.js"
+  },
   "main": "dist/cli.js",
-  "files": ["dist/", "bin/", "src/contracts/artifacts/", "src/snapshot/"],
+  "files": [
+    "dist/",
+    "bin/",
+    "src/contracts/artifacts/",
+    "src/snapshot/"
+  ],
   "scripts": {
     "compile-contracts": "hardhat compile && node scripts/copy-artifacts.js",
     "build": "tsc",
@@ -12,23 +19,26 @@
     "dev": "ts-node src/cli.ts"
   },
   "dependencies": {
-    "yargs": "^17.7.2",
+    "@ethersphere/bee-js": "^12.1.0",
+    "chalk": "^5.3.0",
     "dockerode": "^4.0.2",
     "ethers": "^6.11.0",
-    "chalk": "^5.3.0",
-    "ora": "^8.1.0"
+    "ora": "^8.1.0",
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
-    "typescript": "^5.4.5",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts": "4.8.2",
+    "@openzeppelin/contracts-v3": "npm:@openzeppelin/contracts@^3.4.2",
+    "@types/dockerode": "^3.3.28",
     "@types/node": "^20.11.30",
     "@types/yargs": "^17.0.32",
-    "@types/dockerode": "^3.3.28",
     "hardhat": "^2.22.2",
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "ts-node": "^10.9.2",
-    "@openzeppelin/contracts": "4.8.2",
-    "@openzeppelin/contracts-v3": "npm:@openzeppelin/contracts@^3.4.2"
+    "typescript": "^5.4.5"
   },
-  "engines": { "node": ">=18.0.0" },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "license": "BSD-3-Clause"
 }

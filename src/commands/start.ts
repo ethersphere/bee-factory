@@ -26,11 +26,13 @@ import {
   waitForBeeReady,
   getQueenBootnodeAddr,
 } from '../docker/manager';
+import { generateTraffic } from '../services/traffic_generator';
 
 export interface StartOptions {
   tag: string;
   fresh: boolean;
   blockTime: number | undefined;
+  cheques?: number | undefined;
 }
 
 export async function start(options: StartOptions): Promise<void> {
@@ -254,7 +256,21 @@ export async function start(options: StartOptions): Promise<void> {
     }
   }
 
-  // 12. Summary table
+  // 12. Optionally buy a batch and start uploading until the queen has N cheques
+  {
+    if (options.cheques) {
+      const spinner = ora(`Ensuring queen has at least ${options.cheques} claimable cheques...`).start();
+      try {
+        await generateTraffic(options.cheques)
+        spinner.succeed(chalk.green(`Queen node has at least ${options.cheques} cheques.`));
+      } catch (err) {
+        spinner.fail(chalk.red('Failed to generate traffic and cheques.'));
+        throw err;
+      }
+    }
+  }
+
+  // 13. Summary table
   printSummary(addresses, tag);
 }
 
