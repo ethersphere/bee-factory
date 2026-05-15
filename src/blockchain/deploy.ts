@@ -89,7 +89,7 @@ export async function deployContracts(
 
   // 7. SwapPriceOracle — real price oracle for chequebook/swap accounting.
   //    price: PLUR per accounting unit; chequeValueDeduction: deducted from first cheque per peer.
-  const { contract: swapPriceOracle } = await deploy(deployer, 'SwapPriceOracle', 62500000000n, 0n);
+  const { contract: swapPriceOracle } = await deploy(deployer, 'SwapPriceOracle', 24000n, 0n);
   const swapPriceOracleAddress = await swapPriceOracle.getAddress();
 
   // ── Post-deployment role grants ──────────────────────────────────────────
