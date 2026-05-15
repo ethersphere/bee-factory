@@ -201,6 +201,7 @@ function buildBeeCmd(
     '--skip-postage-snapshot',
     '--warmup-time=1s',
     '--swap-enable',
+    '--swap-initial-deposit=100000000000000000', // 10 BZZ
     `--postage-stamp-address=${contractAddresses.postageStamp}`,
     `--price-oracle-address=${contractAddresses.swapPriceOracle}`,
     `--staking-address=${contractAddresses.stakeRegistry}`,

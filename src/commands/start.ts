@@ -26,6 +26,7 @@ import {
   waitForBeeReady,
   getQueenBootnodeAddr,
 } from '../docker/manager';
+import { generateTraffic } from '../services/traffic_generator';
 
 export interface StartOptions {
   tag: string;
@@ -254,7 +255,39 @@ export async function start(options: StartOptions): Promise<void> {
     }
   }
 
-  // 12. Summary table
+  // 12. Buy a batch and start uploading until the Node 2 has at least 1 cheque
+  {
+    const spinner = ora(`Ensuring Node 2 has at least 1 claimable cheque...`).start();
+    try {
+      await generateTraffic();
+      spinner.succeed(chalk.green(`Worker Node 2 has at least 1 cheque.`));
+    } catch (err) {
+      spinner.fail(chalk.red('Failed to generate traffic and cheques.'));
+      throw err;
+    }
+
+    // Uploaded chunks are rejected as "too new" by the reserve sampler until the next
+    // redistribution round's reveal phase sets a later consensus timestamp. Mine past
+    // one full round (152 blocks), then wait for Bee nodes to process the new blocks
+    // (Bee polls the chain every 5 seconds).
+    {
+      const spinner = ora('Advancing chain past redistribution round for chunk eligibility...').start();
+      try {
+        await fetch(`http://localhost:${ANVIL_PORT}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', method: 'anvil_mine', params: ['0xa0'], id: 1 }), // 160 blocks > 1 round
+        });
+        await new Promise((r) => setTimeout(r, 12_000)); // two Bee polling cycles
+        spinner.succeed(chalk.green('Chunks eligible for reserve sampling.'));
+      } catch (err) {
+        spinner.fail(chalk.red('Failed to advance chain.'));
+        throw err;
+      }
+    }
+  }
+
+  // 13. Summary table
   printSummary(addresses, tag);
 }
 
