@@ -87,8 +87,9 @@ export async function deployContracts(
   const { contract: swapFactory } = await deploy(deployer, 'SimpleSwapFactory', bzzTokenAddress);
   const swapFactoryAddress = await swapFactory.getAddress();
 
-  // 7. SwapPriceOracle (stub — Bee doesn't call this directly)
-  const { contract: swapPriceOracle } = await deploy(deployer, 'SwapPriceOracle');
+  // 7. SwapPriceOracle — real price oracle for chequebook/swap accounting.
+  //    price: PLUR per accounting unit; chequeValueDeduction: deducted from first cheque per peer.
+  const { contract: swapPriceOracle } = await deploy(deployer, 'SwapPriceOracle', 24000n, 0n);
   const swapPriceOracleAddress = await swapPriceOracle.getAddress();
 
   // ── Post-deployment role grants ──────────────────────────────────────────

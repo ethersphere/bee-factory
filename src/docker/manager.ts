@@ -202,7 +202,7 @@ function buildBeeCmd(
     '--warmup-time=1s',
     '--swap-enable',
     `--postage-stamp-address=${contractAddresses.postageStamp}`,
-    `--price-oracle-address=${contractAddresses.priceOracle}`,
+    `--price-oracle-address=${contractAddresses.swapPriceOracle}`,
     `--staking-address=${contractAddresses.stakeRegistry}`,
     `--redistribution-address=${contractAddresses.redistribution}`,
     `--swap-factory-address=${contractAddresses.swapFactory}`,
