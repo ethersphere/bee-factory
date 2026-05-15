@@ -1,24 +1,49 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.19;
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title SwapPriceOracle
- * @notice Not a real contract in the ethersphere repos. Bee does not use a
- *         separate SwapPriceOracle for the chequebook / swap-swear-and-swindle
- *         stack. This file is kept as a placeholder to avoid breaking any
- *         deployment scripts that reference it by name.
- *
- *         The actual price oracle for storage incentives is PriceOracle.sol
- *         (PostagePriceOracle), deployed alongside PostageStamp.sol.
+ * @title PriceOracle contract
+ * @author The Swarm Authors
+ * @dev The price oracle contract keeps track of the current prices for settlement in swap accounting.
+ *      Adapted from swap-swear-and-swindle/contracts/PriceOracle.sol to use OpenZeppelin Ownable.
  */
-contract SwapPriceOracle {
-    uint256 private constant DEFAULT_PRICE = 1000000000000000; // 0.001 ETH
+contract SwapPriceOracle is Ownable {
+    event PriceUpdate(uint256 price);
+    event ChequeValueDeductionUpdate(uint256 chequeValueDeduction);
 
-    function getPrice(bytes32 /*target*/) external view returns (uint256 price, uint256 updatedAt) {
-        return (DEFAULT_PRICE, block.timestamp);
+    // current price in PLUR per accounting unit
+    uint256 public price;
+    // value deducted from first received cheque from a peer in PLUR
+    uint256 public chequeValueDeduction;
+
+    constructor(uint256 _price, uint256 _chequeValueDeduction) {
+        price = _price;
+        chequeValueDeduction = _chequeValueDeduction;
     }
 
-    function currentPrice() external pure returns (uint256) {
-        return DEFAULT_PRICE;
+    /**
+     * @notice Returns the current price in PLUR per accounting unit and the current cheque value deduction amount.
+     */
+    function getPrice() external view returns (uint256, uint256) {
+        return (price, chequeValueDeduction);
+    }
+
+    /**
+     * @notice Update the price. Can only be called by the owner.
+     * @param newPrice the new price
+     */
+    function updatePrice(uint256 newPrice) external onlyOwner {
+        price = newPrice;
+        emit PriceUpdate(price);
+    }
+
+    /**
+     * @notice Update the cheque value deduction amount. Can only be called by the owner.
+     * @param newChequeValueDeduction the new cheque value deduction amount
+     */
+    function updateChequeValueDeduction(uint256 newChequeValueDeduction) external onlyOwner {
+        chequeValueDeduction = newChequeValueDeduction;
+        emit ChequeValueDeductionUpdate(chequeValueDeduction);
     }
 }
