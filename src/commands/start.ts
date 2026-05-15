@@ -36,7 +36,7 @@ export interface StartOptions {
 }
 
 export async function start(options: StartOptions): Promise<void> {
-  const { tag, fresh, blockTime } = options;
+  const { tag, fresh, blockTime, cheques } = options;
 
   console.log(chalk.bold.cyan('\nbee-factory — Local Bee Stack'));
   console.log(chalk.dim('────────────────────────────────────────\n'));
@@ -199,7 +199,7 @@ export async function start(options: StartOptions): Promise<void> {
   {
     const spinner = ora(`Starting queen node (${queen.name})...`).start();
     try {
-      await startBeeNodeWithTag(queen, addresses, keystoreMap.get(0)!, tag, undefined, blockTime);
+      await startBeeNodeWithTag(queen, addresses, keystoreMap.get(0)!, tag, undefined, blockTime, cheques);
       spinner.text = `Waiting for queen API at port ${queen.apiPort}...`;
       await waitForContainerHttp(queen.name, `http://localhost:${queen.apiPort}/health`, 120_000);
       spinner.succeed(chalk.green(`Queen node API ready on port ${queen.apiPort}.`));
@@ -228,7 +228,7 @@ export async function start(options: StartOptions): Promise<void> {
     const spinner = ora('Starting worker nodes...').start();
     try {
       await Promise.all(workers.map(async (node) => {
-        await startBeeNodeWithTag(node, addresses, keystoreMap.get(node.index)!, tag, queenBootnode, blockTime);
+        await startBeeNodeWithTag(node, addresses, keystoreMap.get(node.index)!, tag, queenBootnode, blockTime, cheques);
         await waitForContainerHttp(node.name, `http://localhost:${node.apiPort}/health`, 120_000);
         spinner.info(chalk.green(`${node.name} API ready on port ${node.apiPort}.`));
         spinner.start('Starting worker nodes...');
@@ -258,7 +258,7 @@ export async function start(options: StartOptions): Promise<void> {
 
   // 12. Optionally buy a batch and start uploading until the Node 2 has at least 1 cheque
   {
-    if (options.cheques) {
+    if (cheques) {
       const spinner = ora(`Ensuring Node 2 has at least 1 claimable cheque...`).start();
       try {
         await generateTraffic()
