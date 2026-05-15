@@ -256,13 +256,13 @@ export async function start(options: StartOptions): Promise<void> {
     }
   }
 
-  // 12. Optionally buy a batch and start uploading until the queen has N cheques
+  // 12. Optionally buy a batch and start uploading until the Node 2 has at least 1 cheque
   {
     if (options.cheques) {
       const spinner = ora(`Ensuring Node 2 has at least 1 claimable cheque...`).start();
       try {
         await generateTraffic()
-        spinner.succeed(chalk.green(`Worker Node 2 has at least ${options.cheques} cheques.`));
+        spinner.succeed(chalk.green(`Worker Node 2 has at least 1 cheque.`));
       } catch (err) {
         spinner.fail(chalk.red('Failed to generate traffic and cheques.'));
         throw err;
