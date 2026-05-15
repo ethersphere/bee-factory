@@ -32,7 +32,7 @@ export interface StartOptions {
   tag: string;
   fresh: boolean;
   blockTime: number | undefined;
-  cheques?: number | undefined;
+  cheques?: boolean;
 }
 
 export async function start(options: StartOptions): Promise<void> {
@@ -259,10 +259,10 @@ export async function start(options: StartOptions): Promise<void> {
   // 12. Optionally buy a batch and start uploading until the queen has N cheques
   {
     if (options.cheques) {
-      const spinner = ora(`Ensuring queen has at least ${options.cheques} claimable cheques...`).start();
+      const spinner = ora(`Ensuring Node 2 has at least 1 claimable cheque...`).start();
       try {
-        await generateTraffic(options.cheques)
-        spinner.succeed(chalk.green(`Queen node has at least ${options.cheques} cheques.`));
+        await generateTraffic()
+        spinner.succeed(chalk.green(`Worker Node 2 has at least ${options.cheques} cheques.`));
       } catch (err) {
         spinner.fail(chalk.red('Failed to generate traffic and cheques.'));
         throw err;

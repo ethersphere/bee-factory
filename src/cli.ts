@@ -28,12 +28,13 @@ yargs(hideBin(process.argv))
           description: 'Block time in seconds for the local blockchain (Anvil).',
         })
         .option('cheques', {
-          type: 'number',
-          description: 'After starting, the second node buys a postage batch, deposits BZZ to its checkbook and starts to upload random data until the queen node has at least the specified number of cheques.',
+          type: 'boolean',
+          default: false,
+          description: 'After starting, the first node buys a postage batch, deposits BZZ to its checkbook and starts to upload random data until the second node has at least 1 cheque.',
         }),
     async (argv) => {
       try {
-        await start({ tag: argv.tag as string, fresh: argv.fresh as boolean, blockTime: argv.blockTime as number, cheques: argv.cheques as number | undefined });
+        await start({ tag: argv.tag as string, fresh: argv.fresh as boolean, blockTime: argv.blockTime as number, cheques: argv.cheques as boolean | undefined });
       } catch (err) {
         console.error(chalk.red('\nFatal error:'), String(err));
         process.exit(1);

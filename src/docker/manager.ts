@@ -199,6 +199,7 @@ function buildBeeCmd(
     '--welcome-message=bee-factory',
     '--cors-allowed-origins=*',
     '--skip-postage-snapshot',
+    '--swap-initial-deposit=100000000000000000',
     '--warmup-time=1s',
     '--swap-enable',
     `--postage-stamp-address=${contractAddresses.postageStamp}`,
