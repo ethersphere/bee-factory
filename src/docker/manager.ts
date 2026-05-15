@@ -182,8 +182,7 @@ function buildBeeCmd(
   config: NodeConfig,
   contractAddresses: ContractAddresses,
   bootnodeAddr?: string,
-  blockTime?: number | undefined,
-  chequesEnabled?: boolean
+  blockTime?: number | undefined
 ): string[] {
   const cmd: string[] = [
     'start',
@@ -214,10 +213,6 @@ function buildBeeCmd(
     cmd.push(`--bootnode=${bootnodeAddr}`);
   }
 
-  if (chequesEnabled) {
-    cmd.push('--swap-initial-deposit=100000000000000000');
-  }
-
   return cmd;
 }
 
@@ -227,14 +222,13 @@ export async function startBeeNodeWithTag(
   keystoreDir: string,
   tag: string,
   bootnodeAddr?: string,
-  blockTime?: number | undefined,
-  chequesEnabled?: boolean
+  blockTime?: number | undefined
 ): Promise<void> {
   await removeContainerIfExists(config.name);
 
   const hostname = config.name.replace(/^bee-factory-/, '');
   const image = `${BEE_LOCAL_IMAGE}:${tag}`;
-  const cmd = buildBeeCmd(config, contractAddresses, bootnodeAddr, blockTime, chequesEnabled);
+  const cmd = buildBeeCmd(config, contractAddresses, bootnodeAddr, blockTime);
 
   const exposedPorts: Record<string, object> = {
     [`${config.apiPort}/tcp`]: {},
