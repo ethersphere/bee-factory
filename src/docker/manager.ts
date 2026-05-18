@@ -208,6 +208,7 @@ function buildBeeCmd(
     `--redistribution-address=${contractAddresses.redistribution}`,
     `--swap-factory-address=${contractAddresses.swapFactory}`,
     `--postage-stamp-start-block=${contractAddresses.postageStampStartBlock}`,
+    '--withdrawal-addresses-whitelist="0xd238ff944bacb478cbed5efcae784d7bf4f2ff80"'
   ];
 
   if (bootnodeAddr) {
