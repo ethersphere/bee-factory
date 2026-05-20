@@ -16,11 +16,11 @@ npm install -g @ethersphere/bee-factory
 ## Usage
 
 ```sh
-bee-factory start           # Start the stack (uses bundled snapshot for fast boot)
-bee-factory start --fresh   # Redeploy contracts from scratch, save new snapshot
-bee-factory start --tag v2.5.0     # Build Bee from a specific git ref (default: master)
+bee-factory start               # Start the stack (uses bundled snapshot for fast boot)
+bee-factory start --fresh       # Redeploy contracts from scratch, save new snapshot
+bee-factory start --tag v2.7.1  # Build Bee from a specific git ref (default: master)
 
-bee-factory stop            # Stop and remove all containers
+bee-factory stop                # Stop and remove all containers
 ```
 
 ## Endpoints
