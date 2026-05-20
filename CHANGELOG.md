@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/ethersphere/bee-factory/compare/bee-factory-v1.0.0...bee-factory-v1.0.1) (2026-05-20)
+
+
+### Bug Fixes
+
+* trigger publish ([#298](https://github.com/ethersphere/bee-factory/issues/298)) ([03d96e7](https://github.com/ethersphere/bee-factory/commit/03d96e79a1742cfd8e45aaa95f7634b04e527283))
+
 ## [1.0.0](https://github.com/ethersphere/bee-factory/compare/bee-factory-v0.5.2...bee-factory-v1.0.0) (2026-05-20)
 
 
