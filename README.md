@@ -54,4 +54,4 @@ Contract addresses are printed on startup.
 - Each node is funded with 1 ETH and 100 BZZ.
 - Node password: `bee-factory`
 - Snapshots: `--fresh` redeploys contracts and saves a new snapshot; subsequent normal starts load from it instantly.
-- Uses [Foundry test keys](https://book.getfoundry.sh/reference/anvil/#default-accounts) — never use in production.
+- Uses [Foundry test keys](https://www.getfoundry.sh/anvil#default-accounts) — never use in production.
