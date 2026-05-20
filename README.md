@@ -49,6 +49,18 @@ bee-factory stop            # Stop and remove all containers
 
 Contract addresses are printed on startup.
 
+## Pre-wired state
+
+After all nodes are up, bee-factory performs two extra setup steps so the stack is ready for common Swarm development scenarios:
+
+### Cheque / SWAP testing
+
+Worker 1 (`:11633`) buys a postage batch and uploads random data in a loop until Worker 2 (`:21633`) has received at least one SWAP cheque from it. By the time `bee-factory start` finishes, `:21633` already has a claimable cheque issued by `:11633`, so you can immediately exercise cheque cashing, balance queries, and SWAP accounting without having to generate traffic yourself.
+
+### Reserve sampling / `rchash`
+
+Once the cheque is in place, the chain is advanced by 160 blocks (more than one full redistribution round of 152 blocks). This moves the consensus timestamp forward so that the uploaded chunks are no longer considered "too new" by the reserve sampler. After a short wait for Bee nodes to catch up, `rchash` (reserve commitment hash) can be called successfully.
+
 ## Notes
 
 - Each node is funded with 1 ETH and 100 BZZ.
