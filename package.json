@@ -5,6 +5,9 @@
   "bin": {
     "bee-factory": "./bin/bee-factory.js"
   },
+  "repository": {
+    "url": "https://github.com/ethersphere/bee-factory"
+  },
   "main": "dist/cli.js",
   "files": [
     "dist/",
