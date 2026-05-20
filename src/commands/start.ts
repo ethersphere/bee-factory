@@ -278,7 +278,7 @@ export async function start(options: StartOptions): Promise<void> {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ jsonrpc: '2.0', method: 'anvil_mine', params: ['0xa0'], id: 1 }), // 160 blocks > 1 round
         });
-        await new Promise((r) => setTimeout(r, 12_000)); // two Bee polling cycles
+        await new Promise((r) => setTimeout(r, 25_000)); // five Bee polling cycles
         spinner.succeed(chalk.green('Chunks eligible for reserve sampling.'));
       } catch (err) {
         spinner.fail(chalk.red('Failed to advance chain.'));
