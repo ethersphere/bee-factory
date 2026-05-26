@@ -333,6 +333,20 @@ function printSummary(addresses: ContractAddresses, tag: string): void {
   console.log('  ' + chalk.dim('SwapFactory:     ') + chalk.white(addresses.swapFactory));
   console.log('  ' + chalk.dim('SwapPriceOracle: ') + chalk.white(addresses.swapPriceOracle));
   console.log();
+  console.log(chalk.bold('Node Wallets:'));
+  console.log(chalk.dim('  (Foundry test keys — never use in production)'));
+  console.log();
+
+  for (const node of BEE_NODES) {
+    const address = new ethers.Wallet(node.privateKey).address;
+    const role = node.index === 0 ? 'queen' : `worker ${node.index}`;
+    console.log('  ' + chalk.yellow(`${node.name}`) + chalk.dim(` (${role})`));
+    console.log('    ' + chalk.dim('Address:     ') + chalk.white(address));
+    console.log('    ' + chalk.dim('Private Key: ') + chalk.dim(node.privateKey));
+    console.log();
+  }
+
+  console.log();
   console.log(chalk.dim('Run ') + chalk.bold('bee-factory stop') + chalk.dim(' to tear everything down.'));
   console.log();
 }
