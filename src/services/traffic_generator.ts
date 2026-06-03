@@ -9,6 +9,8 @@ export async function generateTraffic(): Promise<void> {
     const uploaderBee = new Bee(`http://localhost:${BEE_NODES[1].apiPort}`);
     const chequeMonitorBee = new Bee(`http://localhost:${BEE_NODES[2].apiPort}`);
 
+    await waitForPeers(BEE_NODES[1].apiPort, 3);
+
     const batchId = await uploaderBee.buyStorage(Size.fromGigabytes(1), Duration.fromWeeks(2), undefined, REQUEST_OPTIONS);
 
     while (true) {
@@ -32,6 +34,15 @@ export async function generateTraffic(): Promise<void> {
     return await Promise.race([work(), timeout]);
   } finally {
     clearTimeout(timer!);
+  }
+}
+
+async function waitForPeers(apiPort: number, minPeers: number): Promise<void> {
+  const bee = new Bee(`http://localhost:${apiPort}`);
+  while (true) {
+    const peers = await bee.getPeers(REQUEST_OPTIONS);
+    if (peers.length >= minPeers) return;
+    await new Promise(r => setTimeout(r, 2_000));
   }
 }
 
