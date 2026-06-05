@@ -64,17 +64,18 @@ jobs:
           ADDRESSES=$(jq -c '.addresses' src/snapshot/anvil-state.json)
 
           for TAG in "${TAGS[@]}"; do
-            IMAGE="ethersphere/bee-factory-anvil:${TAG}"
+            IMAGE="ethersphere/bee-factory-blockchain:${TAG}"
             echo "Committing bee-factory-anvil → ${IMAGE}"
             docker commit \
               --change "LABEL org.ethswarm.beefactory.addresses=${ADDRESSES}" \
               bee-factory-anvil "${IMAGE}"
             docker push "${IMAGE}"
 
-            for NODE in bee-factory-bee-0 bee-factory-bee-1 bee-factory-bee-2 bee-factory-bee-3 bee-factory-bee-4; do
-              IMAGE="ethersphere/${NODE}:${TAG}"
-              echo "Committing ${NODE} → ${IMAGE}"
-              docker commit "${NODE}" "${IMAGE}"
+            docker commit bee-factory-bee-0 "ethersphere/bee-factory-queen:${TAG}" && docker push "ethersphere/bee-factory-queen:${TAG}"
+            for I in 1 2 3 4; do
+              IMAGE="ethersphere/bee-factory-worker-${I}:${TAG}"
+              echo "Committing bee-factory-bee-${I} → ${IMAGE}"
+              docker commit "bee-factory-bee-${I}" "${IMAGE}"
               docker push "${IMAGE}"
             done
           done

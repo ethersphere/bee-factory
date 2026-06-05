@@ -79,8 +79,16 @@ function normalizeHubTag(tag: string): string {
   return tag === 'master' ? 'latest' : tag;
 }
 
+function containerToHubName(containerName: string): string {
+  if (containerName === ANVIL_CONTAINER) return 'bee-factory-blockchain';
+  if (containerName === 'bee-factory-bee-0') return 'bee-factory-queen';
+  const workerMatch = containerName.match(/^bee-factory-bee-(\d+)$/);
+  if (workerMatch) return `bee-factory-worker-${workerMatch[1]}`;
+  return containerName;
+}
+
 export function hubImageName(containerName: string, tag: string): string {
-  return `${HUB_ORG}/${containerName}:${normalizeHubTag(tag)}`;
+  return `${HUB_ORG}/${containerToHubName(containerName)}:${normalizeHubTag(tag)}`;
 }
 
 export async function tryPullPrebuiltImages(tag: string): Promise<boolean> {
