@@ -1,6 +1,9 @@
 name: Publish Docker Images
 
 on:
+  push:
+    branches:
+      - feat/create-and-publish-stateful-docker-images
   workflow_dispatch:
     inputs:
       tag:
