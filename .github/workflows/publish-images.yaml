@@ -61,13 +61,14 @@ jobs:
           # Dump the final Anvil chain state (post-traffic) and embed it in the
           # container as a JSON file. On next start, bee-factory reads this file
           # and calls anvil_loadState to restore the full chain state.
-          STATE=$(curl -s -X POST http://localhost:8545 \
+          # Write the hex to a file first — it's too large to pass as a shell argument.
+          curl -s -X POST http://localhost:8545 \
             -H "Content-Type: application/json" \
             -d '{"jsonrpc":"2.0","method":"anvil_dumpState","params":[],"id":1}' \
-            | jq -r '.result')
+            | jq -r '.result' > /tmp/anvil-state-hex.txt
           ADDRESSES=$(jq -c '.addresses' src/snapshot/anvil-state.json)
-          jq -n --arg state "$STATE" --argjson addresses "$ADDRESSES" \
-            '{"state":$state,"addresses":$addresses}' > /tmp/anvil-state.json
+          jq -n --rawfile state /tmp/anvil-state-hex.txt --argjson addresses "$ADDRESSES" \
+            '{"state":($state|rtrimstr("\n")),"addresses":$addresses}' > /tmp/anvil-state.json
           docker cp /tmp/anvil-state.json bee-factory-anvil:/anvil-state.json
 
           for TAG in "${TAGS[@]}"; do
