@@ -37,12 +37,18 @@ jobs:
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
       - name: Start bee-factory
-        run: ./bin/bee-factory.js start --fresh --tag ${{ inputs.tag }}
+        run: ./bin/bee-factory.js start --fresh --tag ${{ inputs.tag || 'master' }}
 
       - name: Commit and push images
         run: |
-          INPUT_TAG="${{ inputs.tag }}"
-          IMAGE_TAG=$([ "$INPUT_TAG" = "master" ] && echo "latest" || echo "$INPUT_TAG")
+          INPUT_TAG="${{ inputs.tag || 'master' }}"
+
+          # Always push the version tag; also push latest (master maps to latest only)
+          if [ "$INPUT_TAG" = "master" ]; then
+            TAGS=("latest")
+          else
+            TAGS=("$INPUT_TAG" "latest")
+          fi
 
           # Dump the final Anvil chain state (post-traffic) into the container so
           # that --load-state /anvil-state.json restores it on next start.
@@ -57,18 +63,20 @@ jobs:
           # file written by bee-factory start during step 6.
           ADDRESSES=$(jq -c '.addresses' src/snapshot/anvil-state.json)
 
-          IMAGE="ethersphere/bee-factory-anvil:${IMAGE_TAG}"
-          echo "Committing bee-factory-anvil → ${IMAGE}"
-          docker commit \
-            --change "LABEL org.ethswarm.beefactory.addresses=${ADDRESSES}" \
-            bee-factory-anvil "${IMAGE}"
-          docker push "${IMAGE}"
-
-          for NODE in bee-factory-bee-0 bee-factory-bee-1 bee-factory-bee-2 bee-factory-bee-3 bee-factory-bee-4; do
-            IMAGE="ethersphere/${NODE}:${IMAGE_TAG}"
-            echo "Committing ${NODE} → ${IMAGE}"
-            docker commit "${NODE}" "${IMAGE}"
+          for TAG in "${TAGS[@]}"; do
+            IMAGE="ethersphere/bee-factory-anvil:${TAG}"
+            echo "Committing bee-factory-anvil → ${IMAGE}"
+            docker commit \
+              --change "LABEL org.ethswarm.beefactory.addresses=${ADDRESSES}" \
+              bee-factory-anvil "${IMAGE}"
             docker push "${IMAGE}"
+
+            for NODE in bee-factory-bee-0 bee-factory-bee-1 bee-factory-bee-2 bee-factory-bee-3 bee-factory-bee-4; do
+              IMAGE="ethersphere/${NODE}:${TAG}"
+              echo "Committing ${NODE} → ${IMAGE}"
+              docker commit "${NODE}" "${IMAGE}"
+              docker push "${IMAGE}"
+            done
           done
 
       - name: Stop bee-factory
