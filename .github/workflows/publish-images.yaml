@@ -12,8 +12,16 @@ on:
         default: 'master'
 
 jobs:
-  publish:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+
+    runs-on: ${{ matrix.runner }}
 
     steps:
       - name: Checkout
@@ -42,44 +50,77 @@ jobs:
       - name: Commit and push images
         run: |
           INPUT_TAG="${{ inputs.tag || 'master' }}"
-
-          # Always push the version tag; also push latest (master maps to latest only)
           if [ "$INPUT_TAG" = "master" ]; then
             TAGS=("latest")
           else
             TAGS=("$INPUT_TAG" "latest")
           fi
 
-          # Dump the final Anvil chain state (post-traffic) into the container so
-          # that --load-state /anvil-state.json restores it on next start.
-          STATE_HEX=$(curl -s -X POST http://localhost:8545 \
+          ARCH="${{ matrix.arch }}"
+
+          # Dump the final Anvil chain state (post-traffic) and embed it in the
+          # container as a JSON file. On next start, bee-factory reads this file
+          # and calls anvil_loadState to restore the full chain state.
+          STATE=$(curl -s -X POST http://localhost:8545 \
             -H "Content-Type: application/json" \
             -d '{"jsonrpc":"2.0","method":"anvil_dumpState","params":[],"id":1}' \
             | jq -r '.result')
-          echo -n "$STATE_HEX" > /tmp/anvil-state.json
+          ADDRESSES=$(jq -c '.addresses' src/snapshot/anvil-state.json)
+          jq -n --arg state "$STATE" --argjson addresses "$ADDRESSES" \
+            '{"state":$state,"addresses":$addresses}' > /tmp/anvil-state.json
           docker cp /tmp/anvil-state.json bee-factory-anvil:/anvil-state.json
 
-          # Contract addresses are stable after deployment; read from the snapshot
-          # file written by bee-factory start during step 6.
-          ADDRESSES=$(jq -c '.addresses' src/snapshot/anvil-state.json)
-
           for TAG in "${TAGS[@]}"; do
-            IMAGE="ethersphere/bee-factory-blockchain:${TAG}"
-            echo "Committing bee-factory-anvil → ${IMAGE}"
-            docker commit \
-              --change "LABEL org.ethswarm.beefactory.addresses=${ADDRESSES}" \
-              bee-factory-anvil "${IMAGE}"
-            docker push "${IMAGE}"
+            docker commit bee-factory-anvil "ethersphere/bee-factory-blockchain:${TAG}-${ARCH}"
+            docker push "ethersphere/bee-factory-blockchain:${TAG}-${ARCH}"
 
-            docker commit bee-factory-bee-0 "ethersphere/bee-factory-queen:${TAG}" && docker push "ethersphere/bee-factory-queen:${TAG}"
+            docker commit bee-factory-bee-0 "ethersphere/bee-factory-queen:${TAG}-${ARCH}"
+            docker push "ethersphere/bee-factory-queen:${TAG}-${ARCH}"
+
             for I in 1 2 3 4; do
-              IMAGE="ethersphere/bee-factory-worker-${I}:${TAG}"
-              echo "Committing bee-factory-bee-${I} → ${IMAGE}"
-              docker commit "bee-factory-bee-${I}" "${IMAGE}"
-              docker push "${IMAGE}"
+              docker commit "bee-factory-bee-${I}" "ethersphere/bee-factory-worker-${I}:${TAG}-${ARCH}"
+              docker push "ethersphere/bee-factory-worker-${I}:${TAG}-${ARCH}"
             done
           done
 
       - name: Stop bee-factory
         if: always()
         run: ./bin/bee-factory.js stop
+
+  manifest:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Create and push multi-arch manifests
+        run: |
+          INPUT_TAG="${{ inputs.tag || 'master' }}"
+          if [ "$INPUT_TAG" = "master" ]; then
+            TAGS=("latest")
+          else
+            TAGS=("$INPUT_TAG" "latest")
+          fi
+
+          IMAGES=(
+            "ethersphere/bee-factory-blockchain"
+            "ethersphere/bee-factory-queen"
+            "ethersphere/bee-factory-worker-1"
+            "ethersphere/bee-factory-worker-2"
+            "ethersphere/bee-factory-worker-3"
+            "ethersphere/bee-factory-worker-4"
+          )
+
+          for TAG in "${TAGS[@]}"; do
+            for IMAGE in "${IMAGES[@]}"; do
+              docker manifest create "${IMAGE}:${TAG}" \
+                --amend "${IMAGE}:${TAG}-amd64" \
+                --amend "${IMAGE}:${TAG}-arm64"
+              docker manifest push "${IMAGE}:${TAG}"
+            done
+          done

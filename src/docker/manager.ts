@@ -106,13 +106,50 @@ export async function tryPullPrebuiltImages(tag: string): Promise<boolean> {
   }
 }
 
-export async function readAnvilImageAddresses(tag: string): Promise<ContractAddresses> {
-  const imageName = hubImageName(ANVIL_CONTAINER, tag);
-  const image = await docker.getImage(imageName).inspect();
-  const labels = (image.Config as { Labels?: Record<string, string> }).Labels ?? {};
-  const addressesJson = labels['org.ethswarm.beefactory.addresses'];
-  if (!addressesJson) throw new Error(`Contract addresses label not found on image ${imageName}`);
-  return JSON.parse(addressesJson) as ContractAddresses;
+interface AnvilStateFile {
+  state: string;
+  addresses: ContractAddresses;
+}
+
+export async function restoreAnvilState(): Promise<ContractAddresses> {
+  const tmpFile = path.join(os.tmpdir(), 'bee-factory-anvil-restore.json');
+  try {
+    await runCommand('docker', ['cp', `${ANVIL_CONTAINER}:/anvil-state.json`, tmpFile], { stdio: 'pipe' });
+    const data: AnvilStateFile = JSON.parse(fs.readFileSync(tmpFile, 'utf8'));
+    await anvilLoadStateRpc(data.state);
+    return data.addresses;
+  } finally {
+    if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
+  }
+}
+
+function anvilLoadStateRpc(state: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify({ jsonrpc: '2.0', method: 'anvil_loadState', params: [state], id: 1 });
+    const options: http.RequestOptions = {
+      hostname: 'localhost',
+      port: ANVIL_PORT,
+      path: '/',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+      timeout: 30_000,
+    };
+    const req = http.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk: Buffer) => (data += chunk.toString()));
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.error) return reject(new Error(`anvil_loadState: ${parsed.error.message}`));
+          resolve();
+        } catch { reject(new Error('Invalid JSON from Anvil RPC')); }
+      });
+    });
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('anvil_loadState timed out')); });
+    req.write(body);
+    req.end();
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -202,9 +239,6 @@ export async function startAnvil(blockTime?: number | undefined, imageOverride?:
     '--balance', '10000',
     '--block-time', `${blockTime || DEFAULT_BLOCK_TIME_IN_SECONDS}`,
   ];
-  if (imageOverride) {
-    anvilArgs.push('--load-state', '/anvil-state.json');
-  }
   const anvilCmd = anvilArgs.join(' ');
 
   const container = await docker.createContainer({

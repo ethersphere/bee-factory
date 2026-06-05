@@ -28,7 +28,7 @@ import {
   getQueenBootnodeAddr,
   hubImageName,
   tryPullPrebuiltImages,
-  readAnvilImageAddresses,
+  restoreAnvilState,
 } from '../docker/manager';
 import { generateTraffic } from '../services/traffic_generator';
 
@@ -126,10 +126,10 @@ export async function start(options: StartOptions): Promise<void> {
   let addresses: ContractAddresses;
 
   if (usePrebuilt) {
-    const spinner = ora('Reading contract addresses from pre-built image...').start();
+    const spinner = ora('Restoring Anvil state from pre-built image...').start();
     try {
-      addresses = await readAnvilImageAddresses(tag);
-      spinner.succeed(chalk.green('Contract addresses loaded from pre-built image.'));
+      addresses = await restoreAnvilState();
+      spinner.succeed(chalk.green('Anvil state restored from pre-built image.'));
     } catch (err) {
       spinner.fail(chalk.red('Failed to read contract addresses from pre-built image.'));
       throw err;
