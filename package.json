@@ -12,8 +12,7 @@
   "files": [
     "dist/",
     "bin/",
-    "src/contracts/artifacts/",
-    "src/snapshot/"
+    "src/contracts/artifacts/"
   ],
   "scripts": {
     "compile-contracts": "hardhat compile && node scripts/copy-artifacts.js",

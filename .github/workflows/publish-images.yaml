@@ -1,0 +1,73 @@
+name: Publish Docker Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Bee git ref to build (branch, tag, or commit — e.g. v2.5.0). Uses "master" if omitted.'
+        required: false
+        default: 'master'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run prepare
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Start bee-factory
+        run: ./bin/bee-factory.js start --fresh --tag ${{ inputs.tag }}
+
+      - name: Commit and push images
+        run: |
+          INPUT_TAG="${{ inputs.tag }}"
+          IMAGE_TAG=$([ "$INPUT_TAG" = "master" ] && echo "latest" || echo "$INPUT_TAG")
+
+          # Dump the final Anvil chain state (post-traffic) into the container so
+          # that --load-state /anvil-state.json restores it on next start.
+          STATE_HEX=$(curl -s -X POST http://localhost:8545 \
+            -H "Content-Type: application/json" \
+            -d '{"jsonrpc":"2.0","method":"anvil_dumpState","params":[],"id":1}' \
+            | jq -r '.result')
+          echo -n "$STATE_HEX" > /tmp/anvil-state.json
+          docker cp /tmp/anvil-state.json bee-factory-anvil:/anvil-state.json
+
+          # Contract addresses are stable after deployment; read from the snapshot
+          # file written by bee-factory start during step 6.
+          ADDRESSES=$(jq -c '.addresses' src/snapshot/anvil-state.json)
+
+          IMAGE="ethersphere/bee-factory-anvil:${IMAGE_TAG}"
+          echo "Committing bee-factory-anvil → ${IMAGE}"
+          docker commit \
+            --change "LABEL org.ethswarm.beefactory.addresses=${ADDRESSES}" \
+            bee-factory-anvil "${IMAGE}"
+          docker push "${IMAGE}"
+
+          for NODE in bee-factory-bee-0 bee-factory-bee-1 bee-factory-bee-2 bee-factory-bee-3 bee-factory-bee-4; do
+            IMAGE="ethersphere/${NODE}:${IMAGE_TAG}"
+            echo "Committing ${NODE} → ${IMAGE}"
+            docker commit "${NODE}" "${IMAGE}"
+            docker push "${IMAGE}"
+          done
+
+      - name: Stop bee-factory
+        if: always()
+        run: ./bin/bee-factory.js stop

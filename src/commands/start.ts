@@ -3,6 +3,7 @@ import ora from 'ora';
 import { ethers } from 'ethers';
 
 import {
+  ANVIL_CONTAINER,
   ANVIL_IMAGE,
   ANVIL_PORT,
   BEE_NODES,
@@ -25,6 +26,9 @@ import {
   waitForContainerHttp,
   waitForBeeReady,
   getQueenBootnodeAddr,
+  hubImageName,
+  tryPullPrebuiltImages,
+  readAnvilImageAddresses,
 } from '../docker/manager';
 import { generateTraffic } from '../services/traffic_generator';
 
@@ -52,8 +56,15 @@ export async function start(options: StartOptions): Promise<void> {
     }
   }
 
-  // 2. Pull Anvil image
-  {
+  // Check for pre-built hub images (master → latest). If all 6 images are
+  // available, pull them and skip the build + warmup steps entirely.
+  const usePrebuilt = !fresh && await tryPullPrebuiltImages(tag);
+  if (usePrebuilt) {
+    console.log(chalk.green(`✓ Pre-built images found — quickstart mode.\n`));
+  }
+
+  // 2. Pull Anvil image (skipped when using pre-built hub images)
+  if (!usePrebuilt) {
     const spinner = ora(`Pulling ${ANVIL_IMAGE}...`).start();
     try {
       await pullImageIfNeeded(ANVIL_IMAGE);
@@ -64,10 +75,8 @@ export async function start(options: StartOptions): Promise<void> {
     }
   }
 
-  // 3. Ensure Bee image — build from source if not present locally.
-  //    REACHABILITY_OVERRIDE_PUBLIC is a compile-time flag, so we must build
-  //    our own image rather than pulling the official ethersphere/bee image.
-  {
+  // 3. Ensure Bee image — skipped when using pre-built hub images
+  if (!usePrebuilt) {
     const localImage = `${BEE_LOCAL_IMAGE}:${tag}`;
     if (await beeImageExists(tag)) {
       console.log(chalk.green(`✓ Bee image ready: ${localImage}`));
@@ -103,7 +112,7 @@ export async function start(options: StartOptions): Promise<void> {
     const spinner = ora('Starting Anvil blockchain...').start();
     console.log(chalk.dim(`\n  Block time: ${blockTime ?? 'default (1)'} seconds\n`));
     try {
-      await startAnvil(blockTime);
+      await startAnvil(blockTime, usePrebuilt ? hubImageName(ANVIL_CONTAINER, tag) : undefined);
       spinner.text = 'Waiting for Anvil RPC to be ready...';
       await waitForHttp(`http://localhost:${ANVIL_PORT}`, 60_000);
       spinner.succeed(chalk.green(`Anvil running on port ${ANVIL_PORT}.`));
@@ -115,6 +124,17 @@ export async function start(options: StartOptions): Promise<void> {
 
   // 6. Deploy contracts + fund wallets, or restore from snapshot
   let addresses: ContractAddresses;
+
+  if (usePrebuilt) {
+    const spinner = ora('Reading contract addresses from pre-built image...').start();
+    try {
+      addresses = await readAnvilImageAddresses(tag);
+      spinner.succeed(chalk.green('Contract addresses loaded from pre-built image.'));
+    } catch (err) {
+      spinner.fail(chalk.red('Failed to read contract addresses from pre-built image.'));
+      throw err;
+    }
+  } else {
   const useSnapshot = !fresh && hasSnapshot();
 
   if (useSnapshot) {
@@ -177,6 +197,7 @@ export async function start(options: StartOptions): Promise<void> {
       }
     }
   }
+  } // end else (not usePrebuilt)
 
   // 7. Generate keystore files
   let keystoreMap: Map<number, string>;
@@ -198,7 +219,7 @@ export async function start(options: StartOptions): Promise<void> {
   {
     const spinner = ora(`Starting queen node (${queen.name})...`).start();
     try {
-      await startBeeNodeWithTag(queen, addresses, keystoreMap.get(0)!, tag, undefined, blockTime);
+      await startBeeNodeWithTag(queen, addresses, keystoreMap.get(0)!, tag, undefined, blockTime, usePrebuilt ? hubImageName(queen.name, tag) : undefined);
       spinner.text = `Waiting for queen API at port ${queen.apiPort}...`;
       await waitForContainerHttp(queen.name, `http://localhost:${queen.apiPort}/health`, 120_000);
       spinner.succeed(chalk.green(`Queen node API ready on port ${queen.apiPort}.`));
@@ -227,7 +248,7 @@ export async function start(options: StartOptions): Promise<void> {
     const spinner = ora('Starting worker nodes...').start();
     try {
       await Promise.all(workers.map(async (node) => {
-        await startBeeNodeWithTag(node, addresses, keystoreMap.get(node.index)!, tag, queenBootnode, blockTime);
+        await startBeeNodeWithTag(node, addresses, keystoreMap.get(node.index)!, tag, queenBootnode, blockTime, usePrebuilt ? hubImageName(node.name, tag) : undefined);
         await waitForContainerHttp(node.name, `http://localhost:${node.apiPort}/health`, 120_000);
         spinner.info(chalk.green(`${node.name} API ready on port ${node.apiPort}.`));
         spinner.start('Starting worker nodes...');
@@ -256,7 +277,8 @@ export async function start(options: StartOptions): Promise<void> {
   }
 
   // 12. Buy a batch and start uploading until the Node 2 has at least 1 cheque
-  {
+  // Skipped when starting from pre-built images — traffic was already generated at build time.
+  if (!usePrebuilt) {
     const spinner = ora(`Ensuring Node 2 has at least 1 claimable cheque...`).start();
     try {
       await generateTraffic();

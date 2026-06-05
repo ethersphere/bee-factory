@@ -14,6 +14,7 @@ import {
   BEE_NODE_PASSWORD,
   BEE_REPO_URL,
   BEE_LOCAL_IMAGE,
+  BEE_NODES,
   DEFAULT_BLOCK_TIME_IN_SECONDS,
   NodeConfig,
 } from '../config';
@@ -66,6 +67,44 @@ export async function buildBeeImage(ref: string): Promise<void> {
   } finally {
     fs.rmSync(buildDir, { recursive: true, force: true });
   }
+}
+
+// ---------------------------------------------------------------------------
+// Hub image helpers
+// ---------------------------------------------------------------------------
+
+const HUB_ORG = 'ethersphere';
+
+function normalizeHubTag(tag: string): string {
+  return tag === 'master' ? 'latest' : tag;
+}
+
+export function hubImageName(containerName: string, tag: string): string {
+  return `${HUB_ORG}/${containerName}:${normalizeHubTag(tag)}`;
+}
+
+export async function tryPullPrebuiltImages(tag: string): Promise<boolean> {
+  const images = [
+    hubImageName(ANVIL_CONTAINER, tag),
+    ...BEE_NODES.map(n => hubImageName(n.name, tag)),
+  ];
+  try {
+    for (const image of images) {
+      await pullImageIfNeeded(image);
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function readAnvilImageAddresses(tag: string): Promise<ContractAddresses> {
+  const imageName = hubImageName(ANVIL_CONTAINER, tag);
+  const image = await docker.getImage(imageName).inspect();
+  const labels = (image.Config as { Labels?: Record<string, string> }).Labels ?? {};
+  const addressesJson = labels['org.ethswarm.beefactory.addresses'];
+  if (!addressesJson) throw new Error(`Contract addresses label not found on image ${imageName}`);
+  return JSON.parse(addressesJson) as ContractAddresses;
 }
 
 // ---------------------------------------------------------------------------
@@ -142,23 +181,27 @@ export async function stopAndRemoveContainer(name: string): Promise<void> {
   await removeContainerIfExists(name);
 }
 
-export async function startAnvil(blockTime?: number | undefined): Promise<void> {
+export async function startAnvil(blockTime?: number | undefined, imageOverride?: string): Promise<void> {
   await removeContainerIfExists(ANVIL_CONTAINER);
 
   // The foundry image uses ENTRYPOINT ["/bin/sh", "-c"], so Cmd must be a
   // single shell string — an array would have only the first element executed.
-  const anvilCmd = [
+  const anvilArgs = [
     'anvil',
     '--host', '0.0.0.0',
     '--chain-id', String(CHAIN_ID),
     '--accounts', '20',
     '--balance', '10000',
     '--block-time', `${blockTime || DEFAULT_BLOCK_TIME_IN_SECONDS}`,
-  ].join(' ');
+  ];
+  if (imageOverride) {
+    anvilArgs.push('--load-state', '/anvil-state.json');
+  }
+  const anvilCmd = anvilArgs.join(' ');
 
   const container = await docker.createContainer({
     name: ANVIL_CONTAINER,
-    Image: ANVIL_IMAGE,
+    Image: imageOverride ?? ANVIL_IMAGE,
     Hostname: 'anvil',
     Cmd: [anvilCmd],
     ExposedPorts: { [`${ANVIL_PORT}/tcp`]: {} },
@@ -224,12 +267,13 @@ export async function startBeeNodeWithTag(
   keystoreDir: string,
   tag: string,
   bootnodeAddr?: string,
-  blockTime?: number | undefined
+  blockTime?: number | undefined,
+  imageOverride?: string
 ): Promise<void> {
   await removeContainerIfExists(config.name);
 
   const hostname = config.name.replace(/^bee-factory-/, '');
-  const image = `${BEE_LOCAL_IMAGE}:${tag}`;
+  const image = imageOverride ?? `${BEE_LOCAL_IMAGE}:${tag}`;
   const cmd = buildBeeCmd(config, contractAddresses, bootnodeAddr, blockTime);
 
   const exposedPorts: Record<string, object> = {
