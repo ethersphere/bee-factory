@@ -51,6 +51,7 @@ function runCommand(
 
 export async function buildBeeImage(ref: string): Promise<void> {
   const image = `${BEE_LOCAL_IMAGE}:${ref}`;
+  const upstreamImage = `${BEE_LOCAL_IMAGE}-upstream:${ref}`;
   const buildDir = path.join(os.tmpdir(), 'bee-factory-bee-build');
 
   if (fs.existsSync(buildDir)) {
@@ -58,12 +59,40 @@ export async function buildBeeImage(ref: string): Promise<void> {
   }
 
   try {
+    // 1. Build upstream bee image (declares VOLUME /home/bee/.bee).
     await runCommand('git', ['clone', '--depth=1', '--branch', ref, BEE_REPO_URL, buildDir]);
     await runCommand(
       'docker',
-      ['build', '--build-arg', 'REACHABILITY_OVERRIDE_PUBLIC=true', '-f', 'Dockerfile.dev', '-t', image, '.'],
+      ['build', '--build-arg', 'REACHABILITY_OVERRIDE_PUBLIC=true', '-f', 'Dockerfile.dev', '-t', upstreamImage, '.'],
       { cwd: buildDir }
     );
+
+    // 2. Rewrap the binary in our own image WITHOUT a VOLUME declaration. Docker
+    //    `commit` cannot capture anything inside a declared volume, so the
+    //    upstream image makes "stateful" published images impossible — keys,
+    //    statestore, and reserve chunks would all be discarded on push.
+    const wrapperDir = path.join(buildDir, '.bee-factory-wrapper');
+    fs.mkdirSync(wrapperDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(wrapperDir, 'Dockerfile'),
+      [
+        `FROM ${upstreamImage} AS upstream`,
+        'FROM debian:bookworm-slim',
+        'RUN apt-get update && apt-get install -y --no-install-recommends \\',
+        '    ca-certificates iputils-ping netcat-openbsd telnet curl wget jq net-tools \\',
+        ' && apt-get clean && rm -rf /var/lib/apt/lists/* \\',
+        ' && groupadd -r bee --gid 999 \\',
+        ' && useradd -r -g bee --uid 999 --no-log-init -m bee \\',
+        ' && mkdir -p /home/bee/.bee/keys && chown -R 999:999 /home/bee/.bee',
+        'COPY --from=upstream /usr/local/bin/bee /usr/local/bin/bee',
+        'EXPOSE 1633/tcp 1634/tcp',
+        'USER bee',
+        'WORKDIR /home/bee',
+        'ENTRYPOINT ["bee"]',
+        '',
+      ].join('\n')
+    );
+    await runCommand('docker', ['build', '-t', image, '.'], { cwd: wrapperDir });
   } finally {
     fs.rmSync(buildDir, { recursive: true, force: true });
   }
@@ -306,7 +335,7 @@ function buildBeeCmd(
 export async function startBeeNodeWithTag(
   config: NodeConfig,
   contractAddresses: ContractAddresses,
-  keystoreDir: string,
+  keystoreDir: string | undefined,
   tag: string,
   bootnodeAddr?: string,
   blockTime?: number | undefined,
@@ -337,8 +366,9 @@ export async function startBeeNodeWithTag(
     HostConfig: {
       PortBindings: portBindings,
       NetworkMode: DOCKER_NETWORK,
-      // writable so Bee can generate libp2p.key and pss.key alongside swarm.key
-      Binds: [`${keystoreDir}:/home/bee/.bee/keys/`],
+      // No bind mounts on /home/bee/.bee — keys + statestore must live inside
+      // the container's writable layer so `docker commit` captures them when
+      // publishing stateful images.
     },
     NetworkingConfig: {
       EndpointsConfig: {
@@ -346,6 +376,19 @@ export async function startBeeNodeWithTag(
       },
     },
   });
+
+  // Fresh mode: copy the deterministic swarm.key into the container before
+  // start so bee binds to the expected Ethereum address. Bee will generate
+  // libp2p_v2.key and pss.key itself on first run.
+  // Prebuilt mode (keystoreDir undefined): the committed image already has all
+  // three keys baked in — leave them alone.
+  if (keystoreDir) {
+    await runCommand(
+      'docker',
+      ['cp', `${keystoreDir}/.`, `${config.name}:/home/bee/.bee/keys/`],
+      { stdio: 'pipe' }
+    );
+  }
 
   await container.start();
 }

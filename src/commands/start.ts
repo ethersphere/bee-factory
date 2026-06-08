@@ -201,13 +201,16 @@ export async function start(options: StartOptions): Promise<void> {
   }
   } // end else (not usePrebuilt)
 
-  // 7. Generate keystore files
-  let keystoreMap: Map<number, string>;
-  {
+  // 7. Generate keystore files. Skipped in prebuilt mode — the committed images
+  // already contain swarm.key / libp2p_v2.key / pss.key for each node.
+  const keystoreMap = new Map<number, string | undefined>();
+  if (!usePrebuilt) {
     const spinner = ora('Generating keystore files...').start();
     try {
       const results = await generateAllKeystores(BEE_NODES);
-      keystoreMap = new Map(results.map(({ node, keystoreDir }) => [node.index, keystoreDir]));
+      for (const { node, keystoreDir } of results) {
+        keystoreMap.set(node.index, keystoreDir);
+      }
       spinner.succeed(chalk.green('Keystore files generated.'));
     } catch (err) {
       spinner.fail(chalk.red('Failed to generate keystore files.'));
@@ -221,7 +224,7 @@ export async function start(options: StartOptions): Promise<void> {
   {
     const spinner = ora(`Starting queen node (${queen.name})...`).start();
     try {
-      await startBeeNodeWithTag(queen, addresses, keystoreMap.get(0)!, tag, undefined, blockTime, usePrebuilt ? hubImageName(queen.name, tag) : undefined);
+      await startBeeNodeWithTag(queen, addresses, keystoreMap.get(0), tag, undefined, blockTime, usePrebuilt ? hubImageName(queen.name, tag) : undefined);
       spinner.text = `Waiting for queen API at port ${queen.apiPort}...`;
       await waitForContainerHttp(queen.name, `http://localhost:${queen.apiPort}/health`, 120_000);
       spinner.succeed(chalk.green(`Queen node API ready on port ${queen.apiPort}.`));
@@ -250,7 +253,7 @@ export async function start(options: StartOptions): Promise<void> {
     const spinner = ora('Starting worker nodes...').start();
     try {
       await Promise.all(workers.map(async (node) => {
-        await startBeeNodeWithTag(node, addresses, keystoreMap.get(node.index)!, tag, queenBootnode, blockTime, usePrebuilt ? hubImageName(node.name, tag) : undefined);
+        await startBeeNodeWithTag(node, addresses, keystoreMap.get(node.index), tag, queenBootnode, blockTime, usePrebuilt ? hubImageName(node.name, tag) : undefined);
         await waitForContainerHttp(node.name, `http://localhost:${node.apiPort}/health`, 120_000);
         spinner.info(chalk.green(`${node.name} API ready on port ${node.apiPort}.`));
         spinner.start('Starting worker nodes...');
