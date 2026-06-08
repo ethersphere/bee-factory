@@ -1,6 +1,9 @@
 name: Smoke Test
 
 on:
+  workflow_run:
+    workflows: ['.github/workflows/publish-images.yaml']
+    types: [completed]
   push:
     branches:
       - 'master'
