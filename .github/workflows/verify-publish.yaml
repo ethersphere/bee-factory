@@ -1,0 +1,92 @@
+name: Verify Publish Pipeline
+
+on:
+  pull_request:
+    branches:
+      - '**'
+
+# Emulates the publish-images → smoke-test pipeline end-to-end against a local
+# Docker registry sidecar, so PRs validate the full build → commit → push →
+# pull → start → smoke cycle without touching Docker Hub. Must stay in a single
+# job — the `services: registry` sidecar is scoped to one runner.
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
+
+    env:
+      BEE_FACTORY_HUB_ORG: localhost:5000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install local dependencies
+        run: npm ci
+
+      - name: Install global dependencies
+        run: npm install -g @ethersphere/swarm-cli
+
+      - name: Build
+        run: npm run prepare
+
+      # --- Publish phase ----------------------------------------------------
+
+      - name: Start bee-factory (fresh)
+        run: ./bin/bee-factory.js start --fresh --tag master
+
+      - name: Commit and push images to local registry
+        run: |
+          docker stop bee-factory-bee-0 bee-factory-bee-1 bee-factory-bee-2 bee-factory-bee-3 bee-factory-bee-4
+
+          curl -s -X POST http://localhost:8545 \
+            -H "Content-Type: application/json" \
+            -d '{"jsonrpc":"2.0","method":"anvil_dumpState","params":[],"id":1}' \
+            | jq -r '.result' > /tmp/anvil-state-hex.txt
+          ADDRESSES=$(jq -c '.addresses' src/snapshot/anvil-state.json)
+          jq -n --rawfile state /tmp/anvil-state-hex.txt --argjson addresses "$ADDRESSES" \
+            '{"state":($state|rtrimstr("\n")),"addresses":$addresses}' > /tmp/anvil-state.json
+          docker cp /tmp/anvil-state.json bee-factory-anvil:/anvil-state.json
+
+          docker commit bee-factory-anvil   localhost:5000/bee-factory-blockchain:latest
+          docker push                       localhost:5000/bee-factory-blockchain:latest
+          docker commit bee-factory-bee-0   localhost:5000/bee-factory-queen:latest
+          docker push                       localhost:5000/bee-factory-queen:latest
+          for I in 1 2 3 4; do
+            docker commit "bee-factory-bee-${I}" "localhost:5000/bee-factory-worker-${I}:latest"
+            docker push                          "localhost:5000/bee-factory-worker-${I}:latest"
+          done
+
+      - name: Stop bee-factory
+        run: ./bin/bee-factory.js stop
+
+      - name: Remove local image tags (force pull from registry on next start)
+        run: |
+          docker image rm \
+            localhost:5000/bee-factory-blockchain:latest \
+            localhost:5000/bee-factory-queen:latest \
+            localhost:5000/bee-factory-worker-1:latest \
+            localhost:5000/bee-factory-worker-2:latest \
+            localhost:5000/bee-factory-worker-3:latest \
+            localhost:5000/bee-factory-worker-4:latest
+
+      # --- Smoke phase ------------------------------------------------------
+
+      - name: Start bee-factory (prebuilt — pulls from local registry)
+        run: ./bin/bee-factory.js start
+
+      - name: Smoke test
+        run: ./scripts/test-smoke.sh
+
+      - name: Stop bee-factory
+        if: always()
+        run: ./bin/bee-factory.js stop

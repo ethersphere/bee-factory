@@ -102,7 +102,10 @@ export async function buildBeeImage(ref: string): Promise<void> {
 // Hub image helpers
 // ---------------------------------------------------------------------------
 
-const HUB_ORG = 'ethersphere';
+// Override via BEE_FACTORY_HUB_ORG to point at a different registry/org.
+// In CI verification this is set to "localhost:5000" so the same publish+pull
+// flow can be exercised end-to-end against a local Docker registry sidecar.
+const HUB_ORG = process.env.BEE_FACTORY_HUB_ORG || 'ethersphere';
 
 function normalizeHubTag(tag: string): string {
   return tag === 'master' ? 'latest' : tag;
