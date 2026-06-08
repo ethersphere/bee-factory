@@ -278,16 +278,16 @@ export async function start(options: StartOptions): Promise<void> {
 
   // 12. Ensure reserve sampler is ready
   if (usePrebuilt) {
-    // The chain state is restored but Bee nodes still need a few polling cycles to
-    // re-establish consensus_time from the restored chain before rchash works.
-    const spinner = ora('Waiting for reserve sampler to initialize...').start();
+    // After state restore, Bee nodes need to complete a full redistribution round
+    // to re-establish consensus_time before the reserve sampler becomes usable.
+    const spinner = ora('Advancing chain past redistribution round for chunk eligibility...').start();
     await fetch(`http://localhost:${ANVIL_PORT}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', method: 'anvil_mine', params: ['0x5'], id: 1 }),
+      body: JSON.stringify({ jsonrpc: '2.0', method: 'anvil_mine', params: ['0xa0'], id: 1 }), // 160 blocks > 1 round
     });
-    await new Promise((r) => setTimeout(r, 25_000));
-    spinner.succeed(chalk.green('Reserve sampler ready.'));
+    await new Promise((r) => setTimeout(r, 25_000)); // five Bee polling cycles
+    spinner.succeed(chalk.green('Chunks eligible for reserve sampling.'));
   } else {
     // Buy a batch and start uploading until Node 2 has at least 1 cheque
     const spinner = ora(`Ensuring Node 2 has at least 1 claimable cheque...`).start();
