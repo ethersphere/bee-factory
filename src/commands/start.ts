@@ -25,6 +25,8 @@ import {
   waitForHttp,
   waitForContainerHttp,
   waitForBeeReady,
+  waitForPeers,
+  waitForRchashReady,
   getQueenBootnodeAddr,
   hubImageName,
   tryPullPrebuiltImages,
@@ -278,16 +280,43 @@ export async function start(options: StartOptions): Promise<void> {
 
   // 12. Ensure reserve sampler is ready
   if (usePrebuilt) {
+    // Bee's /status reports isWarmingUp=false instantly when restarted from a
+    // committed image (the flag was already false at commit time), so explicit
+    // peer-connectivity polling is needed before chain advance + rchash work.
+    {
+      const spinner = ora('Waiting for Bee nodes to reconnect to peers...').start();
+      try {
+        await Promise.all(
+          BEE_NODES.slice(1).map((node) => waitForPeers(node.apiPort, 1, 120_000))
+        );
+        // Queen needs all workers connected to have a usable neighborhood.
+        await waitForPeers(BEE_NODES[0].apiPort, BEE_NODES.length - 1, 120_000);
+        spinner.succeed(chalk.green('All Bee nodes have reconnected to peers.'));
+      } catch (err) {
+        spinner.fail(chalk.red('Bee nodes failed to reconnect to peers.'));
+        throw err;
+      }
+    }
+
     // After state restore, Bee nodes need to complete a full redistribution round
     // to re-establish consensus_time before the reserve sampler becomes usable.
-    const spinner = ora('Advancing chain past redistribution round for chunk eligibility...').start();
-    await fetch(`http://localhost:${ANVIL_PORT}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', method: 'anvil_mine', params: ['0xa0'], id: 1 }), // 160 blocks > 1 round
-    });
-    await new Promise((r) => setTimeout(r, 25_000)); // five Bee polling cycles
-    spinner.succeed(chalk.green('Chunks eligible for reserve sampling.'));
+    // Mine well past one round and poll rchash directly — a fixed sleep is too
+    // fragile because reserve indexing time varies with CI machine load.
+    {
+      const spinner = ora('Advancing chain and waiting for reserve sampler...').start();
+      try {
+        await fetch(`http://localhost:${ANVIL_PORT}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', method: 'anvil_mine', params: ['0xa0'], id: 1 }), // 160 blocks > 1 round
+        });
+        await waitForRchashReady(BEE_NODES[0].apiPort, 180_000);
+        spinner.succeed(chalk.green('Reserve sampler ready.'));
+      } catch (err) {
+        spinner.fail(chalk.red('Reserve sampler did not become ready.'));
+        throw err;
+      }
+    }
   } else {
     // Buy a batch and start uploading until Node 2 has at least 1 cheque
     const spinner = ora(`Ensuring Node 2 has at least 1 claimable cheque...`).start();

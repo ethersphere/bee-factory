@@ -495,6 +495,75 @@ export async function waitForBeeReady(
   );
 }
 
+/**
+ * Poll /topology until the node has at least `minPeers` connected peers.
+ * Bee's /status reports isWarmingUp=false from cached state immediately after
+ * a restart from a committed image, so we need a separate peer-connectivity
+ * gate before any reserve-sample work will succeed.
+ */
+export async function waitForPeers(
+  apiPort: number,
+  minPeers: number,
+  timeoutMs: number
+): Promise<number> {
+  const deadline = Date.now() + timeoutMs;
+  const interval = 2000;
+  let lastConnected = 0;
+
+  while (Date.now() < deadline) {
+    try {
+      const body = await httpGetJson(`http://localhost:${apiPort}/topology`);
+      const connected = Number(body.connected ?? 0);
+      lastConnected = connected;
+      if (connected >= minPeers) return connected;
+    } catch {
+      // not ready yet
+    }
+    await sleep(interval);
+  }
+
+  throw new Error(
+    `Timed out waiting for ${minPeers} peer(s) on port ${apiPort} (${timeoutMs}ms). Last connected count: ${lastConnected}`
+  );
+}
+
+/**
+ * Poll /rchash until it returns 200. After restoring chain state and restarting
+ * Bee from a committed image, the reserve sampler needs the chain head to
+ * advance past a redistribution round and Bee to reprocess events before
+ * sampling chunks with proofs succeeds. Polling the actual endpoint is more
+ * reliable than a fixed sleep.
+ */
+export async function waitForRchashReady(apiPort: number, timeoutMs: number): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  const interval = 3000;
+  let lastError = 'no response';
+
+  while (Date.now() < deadline) {
+    try {
+      const addrs = await httpGetJson(`http://localhost:${apiPort}/addresses`);
+      const overlay = String(addrs.overlay ?? '');
+      if (overlay) {
+        const probe = await httpGetStatusAndBody(
+          `http://localhost:${apiPort}/rchash/0/${overlay}/${overlay}`,
+          20_000
+        );
+        if (probe.status === 200) return;
+        lastError = `status ${probe.status} body ${probe.body.slice(0, 200)}`;
+      } else {
+        lastError = 'overlay address not yet available';
+      }
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : String(err);
+    }
+    await sleep(interval);
+  }
+
+  throw new Error(
+    `Timed out waiting for rchash to become ready on port ${apiPort} (${timeoutMs}ms). Last: ${lastError}`
+  );
+}
+
 /** Returns true if the server replies with any HTTP status (even 4xx). */
 function httpGetAny(url: string): Promise<boolean> {
   return new Promise((resolve) => {
@@ -588,6 +657,32 @@ export async function getQueenBootnodeAddr(apiPort: number): Promise<string> {
   }
 
   throw new Error('Timed out waiting for queen bootnode address');
+}
+
+function httpGetStatusAndBody(url: string, timeoutMs: number): Promise<{ status: number; body: string }> {
+  return new Promise((resolve, reject) => {
+    const parsedUrl = new URL(url);
+    const options: http.RequestOptions = {
+      hostname: parsedUrl.hostname,
+      port: parsedUrl.port ? Number(parsedUrl.port) : 80,
+      path: parsedUrl.pathname + parsedUrl.search,
+      method: 'GET',
+      timeout: timeoutMs,
+    };
+
+    const req = http.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk: Buffer) => (data += chunk.toString()));
+      res.on('end', () => resolve({ status: res.statusCode ?? 0, body: data }));
+    });
+
+    req.on('error', reject);
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('Request timed out'));
+    });
+    req.end();
+  });
 }
 
 function httpGetJson(url: string): Promise<Record<string, unknown>> {
