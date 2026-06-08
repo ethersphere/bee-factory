@@ -2,6 +2,12 @@ name: Smoke Test
 
 on:
   workflow_call:
+    inputs:
+      images-artifact:
+        description: 'Optional artifact name containing a `docker save` tar of all six bee-factory images. When set, the tar is loaded into the local Docker daemon before bee-factory start, which then picks them up via the prebuilt path without contacting Docker Hub. Used by verify-publish to test PRs against locally-built images.'
+        type: string
+        required: false
+        default: ''
 
 jobs:
   smoke-test:
@@ -24,6 +30,17 @@ jobs:
 
       - name: Compile
         run: npm run prepare
+
+      - name: Download images artifact
+        if: inputs.images-artifact != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.images-artifact }}
+          path: /tmp/bee-factory-images
+
+      - name: Load images into local Docker daemon
+        if: inputs.images-artifact != ''
+        run: docker load -i /tmp/bee-factory-images/bee-factory-images.tar
 
       - name: Start bee factory
         run: ./bin/bee-factory.js start

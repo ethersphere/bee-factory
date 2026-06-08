@@ -5,21 +5,21 @@ on:
     branches:
       - '**'
 
-# Emulates the publish-images → smoke-test pipeline end-to-end against a local
-# Docker registry sidecar, so PRs validate the full build → commit → push →
-# pull → start → smoke cycle without touching Docker Hub. Must stay in a single
-# job — the `services: registry` sidecar is scoped to one runner.
+# Two-stage emulation of the publish-images → smoke-test pipeline:
+#
+#   publish (this workflow) — builds bee + anvil, runs --fresh, commits the
+#     six stateful images locally with the same `ethersphere/...:latest` tags
+#     the real publish workflow uses, then `docker save`s them into a tar
+#     uploaded as an artifact.
+#
+#   smoke-test (smoke-test.yaml, called below) — downloads the artifact,
+#     `docker load`s it, then runs the standard smoke flow. Bee-factory's
+#     prebuilt path finds the images already present locally and skips any
+#     Docker Hub pull, so the test exercises the just-built images without
+#     touching the real registry.
 jobs:
-  verify:
+  publish:
     runs-on: ubuntu-latest
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5000:5000
-
-    env:
-      BEE_FACTORY_HUB_ORG: localhost:5000
 
     steps:
       - name: Checkout
@@ -30,21 +30,16 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install local dependencies
+      - name: Install dependencies
         run: npm ci
-
-      - name: Install global dependencies
-        run: npm install -g @ethersphere/swarm-cli
 
       - name: Build
         run: npm run prepare
 
-      # --- Publish phase ----------------------------------------------------
-
       - name: Start bee-factory (fresh)
         run: ./bin/bee-factory.js start --fresh --tag master
 
-      - name: Commit and push images to local registry
+      - name: Commit stateful images
         run: |
           docker stop bee-factory-bee-0 bee-factory-bee-1 bee-factory-bee-2 bee-factory-bee-3 bee-factory-bee-4
 
@@ -57,36 +52,35 @@ jobs:
             '{"state":($state|rtrimstr("\n")),"addresses":$addresses}' > /tmp/anvil-state.json
           docker cp /tmp/anvil-state.json bee-factory-anvil:/anvil-state.json
 
-          docker commit bee-factory-anvil   localhost:5000/bee-factory-blockchain:latest
-          docker push                       localhost:5000/bee-factory-blockchain:latest
-          docker commit bee-factory-bee-0   localhost:5000/bee-factory-queen:latest
-          docker push                       localhost:5000/bee-factory-queen:latest
+          docker commit bee-factory-anvil ethersphere/bee-factory-blockchain:latest
+          docker commit bee-factory-bee-0 ethersphere/bee-factory-queen:latest
           for I in 1 2 3 4; do
-            docker commit "bee-factory-bee-${I}" "localhost:5000/bee-factory-worker-${I}:latest"
-            docker push                          "localhost:5000/bee-factory-worker-${I}:latest"
+            docker commit "bee-factory-bee-${I}" "ethersphere/bee-factory-worker-${I}:latest"
           done
 
       - name: Stop bee-factory
         run: ./bin/bee-factory.js stop
 
-      - name: Remove local image tags (force pull from registry on next start)
+      - name: Export images as tar
         run: |
-          docker image rm \
-            localhost:5000/bee-factory-blockchain:latest \
-            localhost:5000/bee-factory-queen:latest \
-            localhost:5000/bee-factory-worker-1:latest \
-            localhost:5000/bee-factory-worker-2:latest \
-            localhost:5000/bee-factory-worker-3:latest \
-            localhost:5000/bee-factory-worker-4:latest
+          mkdir -p /tmp/bee-factory-images
+          docker save -o /tmp/bee-factory-images/bee-factory-images.tar \
+            ethersphere/bee-factory-blockchain:latest \
+            ethersphere/bee-factory-queen:latest \
+            ethersphere/bee-factory-worker-1:latest \
+            ethersphere/bee-factory-worker-2:latest \
+            ethersphere/bee-factory-worker-3:latest \
+            ethersphere/bee-factory-worker-4:latest
 
-      # --- Smoke phase ------------------------------------------------------
+      - name: Upload images artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bee-factory-images
+          path: /tmp/bee-factory-images/bee-factory-images.tar
+          retention-days: 1
 
-      - name: Start bee-factory (prebuilt — pulls from local registry)
-        run: ./bin/bee-factory.js start
-
-      - name: Smoke test
-        run: ./scripts/test-smoke.sh
-
-      - name: Stop bee-factory
-        if: always()
-        run: ./bin/bee-factory.js stop
+  smoke-test:
+    needs: publish
+    uses: ./.github/workflows/smoke-test.yaml
+    with:
+      images-artifact: bee-factory-images
