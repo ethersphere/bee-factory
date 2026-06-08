@@ -58,6 +58,15 @@ jobs:
 
           ARCH="${{ matrix.arch }}"
 
+          # Stop bee containers BEFORE dumping anvil state. Bee's graceful
+          # shutdown flushes its batch store, freezing last_processed_block.
+          # Anvil keeps mining for a few more seconds, so its dumped chain head
+          # will be >= each bee's last_processed_block — meaning a restored
+          # cluster sees anvil slightly ahead and bee polls forward through the
+          # gap. Without this ordering, bee's batch store ends up ahead of the
+          # restored chain and bee aborts with a "chain regressed" safety check.
+          docker stop bee-factory-bee-0 bee-factory-bee-1 bee-factory-bee-2 bee-factory-bee-3 bee-factory-bee-4
+
           # Dump the final Anvil chain state (post-traffic) and embed it in the
           # container as a JSON file. On next start, bee-factory reads this file
           # and calls anvil_loadState to restore the full chain state.
