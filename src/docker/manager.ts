@@ -132,7 +132,7 @@ function anvilLoadStateRpc(state: string): Promise<void> {
       path: '/',
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
-      timeout: 30_000,
+      timeout: 120_000,
     };
     const req = http.request(options, (res) => {
       let data = '';
