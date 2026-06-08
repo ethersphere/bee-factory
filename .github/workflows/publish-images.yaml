@@ -1,9 +1,6 @@
 name: Publish Docker Images
 
 on:
-  push:
-    branches:
-      - feat/create-and-publish-stateful-docker-images
   workflow_dispatch:
     inputs:
       tag:
@@ -134,3 +131,7 @@ jobs:
               docker manifest push "${IMAGE}:${TAG}"
             done
           done
+
+  smoke-test:
+    needs: manifest
+    uses: ./.github/workflows/smoke-test.yaml
