@@ -25,7 +25,7 @@ import {
   waitForHttp,
   waitForContainerHttp,
   waitForBeeReady,
-  waitForPeers,
+  formPeerMesh,
   waitForRchashReady,
   getQueenBootnodeAddr,
   hubImageName,
@@ -281,25 +281,24 @@ export async function start(options: StartOptions): Promise<void> {
     }
   }
 
+  // 11b. Force a full peer mesh. isWarmingUp flips as soon as each worker
+  // connects to the queen, but worker↔worker links come from hive gossip whose
+  // cycle is occasionally >2 min on CI. Calling /connect explicitly removes
+  // that race so traffic generation and reserve sampling see all peers
+  // immediately.
+  {
+    const spinner = ora('Forming peer mesh...').start();
+    try {
+      await formPeerMesh(BEE_NODES);
+      spinner.succeed(chalk.green('Peer mesh formed.'));
+    } catch (err) {
+      spinner.fail(chalk.red('Failed to form peer mesh.'));
+      throw err;
+    }
+  }
+
   // 12. Ensure reserve sampler is ready
   if (usePrebuilt) {
-    // Bee's /status reports isWarmingUp=false instantly when restarted from a
-    // committed image (the flag was already false at commit time), so explicit
-    // peer-connectivity polling is needed before chain advance + rchash work.
-    {
-      const spinner = ora('Waiting for Bee nodes to reconnect to peers...').start();
-      try {
-        await Promise.all(
-          BEE_NODES.slice(1).map((node) => waitForPeers(node.apiPort, 1, 120_000))
-        );
-        // Queen needs all workers connected to have a usable neighborhood.
-        await waitForPeers(BEE_NODES[0].apiPort, BEE_NODES.length - 1, 120_000);
-        spinner.succeed(chalk.green('All Bee nodes have reconnected to peers.'));
-      } catch (err) {
-        spinner.fail(chalk.red('Bee nodes failed to reconnect to peers.'));
-        throw err;
-      }
-    }
 
     // After state restore, Bee nodes need to complete a full redistribution round
     // to re-establish consensus_time before the reserve sampler becomes usable.
