@@ -542,38 +542,6 @@ export async function waitForBeeReady(
 }
 
 /**
- * Poll /topology until the node has at least `minPeers` connected peers.
- * Bee's /status reports isWarmingUp=false from cached state immediately after
- * a restart from a committed image, so we need a separate peer-connectivity
- * gate before any reserve-sample work will succeed.
- */
-export async function waitForPeers(
-  apiPort: number,
-  minPeers: number,
-  timeoutMs: number
-): Promise<number> {
-  const deadline = Date.now() + timeoutMs;
-  const interval = 2000;
-  let lastConnected = 0;
-
-  while (Date.now() < deadline) {
-    try {
-      const body = await httpGetJson(`http://localhost:${apiPort}/topology`);
-      const connected = Number(body.connected ?? 0);
-      lastConnected = connected;
-      if (connected >= minPeers) return connected;
-    } catch {
-      // not ready yet
-    }
-    await sleep(interval);
-  }
-
-  throw new Error(
-    `Timed out waiting for ${minPeers} peer(s) on port ${apiPort} (${timeoutMs}ms). Last connected count: ${lastConnected}`
-  );
-}
-
-/**
  * Poll /rchash until it returns 200. After restoring chain state and restarting
  * Bee from a committed image, the reserve sampler needs the chain head to
  * advance past a redistribution round and Bee to reprocess events before
@@ -703,6 +671,72 @@ export async function getQueenBootnodeAddr(apiPort: number): Promise<string> {
   }
 
   throw new Error('Timed out waiting for queen bootnode address');
+}
+
+/**
+ * Returns a node's Docker-network underlay multiaddr (the /ip4/172.x... entry),
+ * which is the only address other containers can dial. Polls /addresses until
+ * one is published.
+ */
+async function getNodeUnderlayAddr(apiPort: number, timeoutMs = 60_000): Promise<string> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      const body = await httpGetJson(`http://localhost:${apiPort}/addresses`);
+      if (Array.isArray(body.underlay)) {
+        const onNet = (body.underlay as string[]).find(
+          (a) => !a.includes('127.0.0.1') && !a.includes('/ip4/0.0.0.0') && !a.startsWith('/ip6/')
+        );
+        if (onNet) return onNet;
+      }
+    } catch {
+      // not ready
+    }
+    await sleep(1000);
+  }
+  throw new Error(`Timed out waiting for underlay address on port ${apiPort}`);
+}
+
+/**
+ * Forces full peer mesh by POSTing /connect for every (A → B) pair. Bee
+ * normally fills its peer table via hive gossip from the bootnode, but the
+ * gossip cycle can take >2 min on noisy CI runners and races with
+ * generateTraffic's peer-existence check. Issuing /connect directly removes
+ * the race — a successful 200 means the libp2p handshake completed, after
+ * which the peer is in /peers immediately.
+ *
+ * 4xx from /connect (e.g. already connected) is treated as success; everything
+ * else is logged but not fatal so a single transient hiccup can't fail boot.
+ */
+export async function formPeerMesh(nodes: { apiPort: number }[]): Promise<void> {
+  const addrs = await Promise.all(nodes.map((n) => getNodeUnderlayAddr(n.apiPort)));
+
+  const tasks: Promise<void>[] = [];
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = 0; j < nodes.length; j++) {
+      if (i === j) continue;
+      tasks.push(connectPeer(nodes[i].apiPort, addrs[j]).catch(() => { /* best effort */ }));
+    }
+  }
+  await Promise.all(tasks);
+}
+
+function connectPeer(apiPort: number, peerMultiaddr: string): Promise<void> {
+  const path = `/connect/${peerMultiaddr.startsWith('/') ? peerMultiaddr.slice(1) : peerMultiaddr}`;
+  return new Promise((resolve, reject) => {
+    const req = http.request(
+      { hostname: 'localhost', port: apiPort, path, method: 'POST', timeout: 15_000 },
+      (res) => {
+        res.resume();
+        const code = res.statusCode ?? 0;
+        if (code < 500) return resolve(); // 2xx = connected, 4xx = already connected / bad input — treat both as ok
+        reject(new Error(`/connect returned ${code}`));
+      }
+    );
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('/connect timed out')); });
+    req.end();
+  });
 }
 
 function httpGetStatusAndBody(url: string, timeoutMs: number): Promise<{ status: number; body: string }> {
