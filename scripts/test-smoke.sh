@@ -14,5 +14,5 @@ status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:1633/health)
 output=$(swarm-cli utility rchash)
 echo "$output" | grep -q "Reserve sampling duration" && pass "rchash works" || fail "rchash output missing 'Reserve sampling duration'"
 
-cheque_count=$(curl -s http://localhost:21633/chequebook/cheque | jq '[.lastcheques[] | select(.lastreceived != null)] | length')
-[ "$cheque_count" -le 1 ] && pass "cheque created on node 21633" || fail "node on port 21633 has no received cheques"
+cheque_count=$(curl -s http://localhost:1637/chequebook/cheque | jq '[.lastcheques[] | select(.lastreceived != null)] | length')
+[ "$cheque_count" -le 1 ] && pass "cheque created on node 1637" || fail "node on port 1637 has no received cheques"

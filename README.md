@@ -27,11 +27,11 @@ bee-factory stop                # Stop and remove all containers
 
 | Node    | API                    | P2P                    |
 |---------|------------------------|------------------------|
-| Queen   | http://localhost:1633  | http://localhost:1634  |
-| Worker 1 | http://localhost:11633 | http://localhost:11634 |
-| Worker 2 | http://localhost:21633 | http://localhost:21634 |
-| Worker 3 | http://localhost:31633 | http://localhost:31634 |
-| Worker 4 | http://localhost:41633 | http://localhost:41634 |
+| Queen    | http://localhost:1633 | http://localhost:1634 |
+| Worker 1 | http://localhost:1635 | http://localhost:1636 |
+| Worker 2 | http://localhost:1637 | http://localhost:1638 |
+| Worker 3 | http://localhost:1639 | http://localhost:1640 |
+| Worker 4 | http://localhost:1641 | http://localhost:1642 |
 
 **Anvil RPC:** `http://localhost:8545` (chain ID 1337)
 
@@ -55,7 +55,7 @@ After all nodes are up, bee-factory performs two extra setup steps so the stack 
 
 ### Cheque / SWAP testing
 
-Worker 1 (`:11633`) buys a postage batch and uploads random data in a loop until Worker 2 (`:21633`) has received at least one SWAP cheque from it. By the time `bee-factory start` finishes, `:21633` already has a claimable cheque issued by `:11633`, so you can immediately exercise cheque cashing, balance queries, and SWAP accounting without having to generate traffic yourself.
+Worker 1 (`:1635`) buys a postage batch and uploads random data in a loop until Worker 2 (`:1637`) has received at least one SWAP cheque from it. By the time `bee-factory start` finishes, `:1637` already has a claimable cheque issued by `:1635`, so you can immediately exercise cheque cashing, balance queries, and SWAP accounting without having to generate traffic yourself.
 
 ### Withdrawal address whitelist
 

@@ -22,13 +22,13 @@
 -   The tool must generate an Ethereum V3 keystore file (`swarm.key`) for each node from its pre-baked private key, encrypt it with the fixed password `bee-factory`, store it under `/tmp/bee-factory/keys/bee-{n}/`, and mount that directory into the container.
 -   The node at API port 1633 is the "queen" (main) node; the other four are worker nodes that connect to it to build topology.
 
-| Node   | API port | P2P port |
-|--------|----------|----------|
-| queen  | 1633     | 1634     |
-| worker | 11633    | 11634    |
-| worker | 21633    | 21634    |
-| worker | 31633    | 31634    |
-| worker | 41633    | 41634    |
+| Node     | API port | P2P port |
+|----------|----------|----------|
+| queen    | 1633     | 1634     |
+| worker 1 | 1635     | 1636     |
+| worker 2 | 1637     | 1638     |
+| worker 3 | 1639     | 1640     |
+| worker 4 | 1641     | 1642     |
 
 # Blockchain
 
