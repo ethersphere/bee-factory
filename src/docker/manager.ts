@@ -14,6 +14,7 @@ import {
   BEE_NODE_PASSWORD,
   BEE_REPO_URL,
   BEE_LOCAL_IMAGE,
+  BEE_NODES,
   DEFAULT_BLOCK_TIME_IN_SECONDS,
   NodeConfig,
 } from '../config';
@@ -50,6 +51,7 @@ function runCommand(
 
 export async function buildBeeImage(ref: string): Promise<void> {
   const image = `${BEE_LOCAL_IMAGE}:${ref}`;
+  const upstreamImage = `${BEE_LOCAL_IMAGE}-upstream:${ref}`;
   const buildDir = path.join(os.tmpdir(), 'bee-factory-bee-build');
 
   if (fs.existsSync(buildDir)) {
@@ -57,15 +59,129 @@ export async function buildBeeImage(ref: string): Promise<void> {
   }
 
   try {
+    // 1. Build upstream bee image (declares VOLUME /home/bee/.bee).
     await runCommand('git', ['clone', '--depth=1', '--branch', ref, BEE_REPO_URL, buildDir]);
     await runCommand(
       'docker',
-      ['build', '--build-arg', 'REACHABILITY_OVERRIDE_PUBLIC=true', '-f', 'Dockerfile.dev', '-t', image, '.'],
+      ['build', '--build-arg', 'REACHABILITY_OVERRIDE_PUBLIC=true', '-f', 'Dockerfile.dev', '-t', upstreamImage, '.'],
       { cwd: buildDir }
     );
+
+    // 2. Rewrap the binary in our own image WITHOUT a VOLUME declaration. Docker
+    //    `commit` cannot capture anything inside a declared volume, so the
+    //    upstream image makes "stateful" published images impossible — keys,
+    //    statestore, and reserve chunks would all be discarded on push.
+    const wrapperDir = path.join(buildDir, '.bee-factory-wrapper');
+    fs.mkdirSync(wrapperDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(wrapperDir, 'Dockerfile'),
+      [
+        `FROM ${upstreamImage} AS upstream`,
+        'FROM debian:bookworm-slim',
+        'RUN apt-get update && apt-get install -y --no-install-recommends \\',
+        '    ca-certificates iputils-ping netcat-openbsd telnet curl wget jq net-tools \\',
+        ' && apt-get clean && rm -rf /var/lib/apt/lists/* \\',
+        ' && groupadd -r bee --gid 999 \\',
+        ' && useradd -r -g bee --uid 999 --no-log-init -m bee \\',
+        ' && mkdir -p /home/bee/.bee/keys && chown -R 999:999 /home/bee/.bee',
+        'COPY --from=upstream /usr/local/bin/bee /usr/local/bin/bee',
+        'EXPOSE 1633/tcp 1634/tcp',
+        'USER bee',
+        'WORKDIR /home/bee',
+        'ENTRYPOINT ["bee"]',
+        '',
+      ].join('\n')
+    );
+    await runCommand('docker', ['build', '-t', image, '.'], { cwd: wrapperDir });
   } finally {
     fs.rmSync(buildDir, { recursive: true, force: true });
   }
+}
+
+// ---------------------------------------------------------------------------
+// Hub image helpers
+// ---------------------------------------------------------------------------
+
+// Override via BEE_FACTORY_HUB_ORG to point at a different registry/org.
+// In CI verification this is set to "localhost:5000" so the same publish+pull
+// flow can be exercised end-to-end against a local Docker registry sidecar.
+const HUB_ORG = process.env.BEE_FACTORY_HUB_ORG || 'ethersphere';
+
+function normalizeHubTag(tag: string): string {
+  return tag === 'master' ? 'latest' : tag;
+}
+
+function containerToHubName(containerName: string): string {
+  if (containerName === ANVIL_CONTAINER) return 'bee-factory-blockchain';
+  if (containerName === 'bee-factory-bee-0') return 'bee-factory-queen';
+  const workerMatch = containerName.match(/^bee-factory-bee-(\d+)$/);
+  if (workerMatch) return `bee-factory-worker-${workerMatch[1]}`;
+  return containerName;
+}
+
+export function hubImageName(containerName: string, tag: string): string {
+  return `${HUB_ORG}/${containerToHubName(containerName)}:${normalizeHubTag(tag)}`;
+}
+
+export async function tryPullPrebuiltImages(tag: string): Promise<boolean> {
+  const images = [
+    hubImageName(ANVIL_CONTAINER, tag),
+    ...BEE_NODES.map(n => hubImageName(n.name, tag)),
+  ];
+  try {
+    for (const image of images) {
+      await pullImageIfNeeded(image);
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+interface AnvilStateFile {
+  state: string;
+  addresses: ContractAddresses;
+}
+
+export async function restoreAnvilState(): Promise<ContractAddresses> {
+  const tmpFile = path.join(os.tmpdir(), 'bee-factory-anvil-restore.json');
+  try {
+    await runCommand('docker', ['cp', `${ANVIL_CONTAINER}:/anvil-state.json`, tmpFile], { stdio: 'pipe' });
+    const data: AnvilStateFile = JSON.parse(fs.readFileSync(tmpFile, 'utf8'));
+    await anvilLoadStateRpc(data.state);
+    return data.addresses;
+  } finally {
+    if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
+  }
+}
+
+function anvilLoadStateRpc(state: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify({ jsonrpc: '2.0', method: 'anvil_loadState', params: [state], id: 1 });
+    const options: http.RequestOptions = {
+      hostname: 'localhost',
+      port: ANVIL_PORT,
+      path: '/',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+      timeout: 120_000,
+    };
+    const req = http.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk: Buffer) => (data += chunk.toString()));
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.error) return reject(new Error(`anvil_loadState: ${parsed.error.message}`));
+          resolve();
+        } catch { reject(new Error('Invalid JSON from Anvil RPC')); }
+      });
+    });
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('anvil_loadState timed out')); });
+    req.write(body);
+    req.end();
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -142,23 +258,24 @@ export async function stopAndRemoveContainer(name: string): Promise<void> {
   await removeContainerIfExists(name);
 }
 
-export async function startAnvil(blockTime?: number | undefined): Promise<void> {
+export async function startAnvil(blockTime?: number | undefined, imageOverride?: string): Promise<void> {
   await removeContainerIfExists(ANVIL_CONTAINER);
 
   // The foundry image uses ENTRYPOINT ["/bin/sh", "-c"], so Cmd must be a
   // single shell string — an array would have only the first element executed.
-  const anvilCmd = [
+  const anvilArgs = [
     'anvil',
     '--host', '0.0.0.0',
     '--chain-id', String(CHAIN_ID),
     '--accounts', '20',
     '--balance', '10000',
     '--block-time', `${blockTime || DEFAULT_BLOCK_TIME_IN_SECONDS}`,
-  ].join(' ');
+  ];
+  const anvilCmd = anvilArgs.join(' ');
 
   const container = await docker.createContainer({
     name: ANVIL_CONTAINER,
-    Image: ANVIL_IMAGE,
+    Image: imageOverride ?? ANVIL_IMAGE,
     Hostname: 'anvil',
     Cmd: [anvilCmd],
     ExposedPorts: { [`${ANVIL_PORT}/tcp`]: {} },
@@ -221,15 +338,16 @@ function buildBeeCmd(
 export async function startBeeNodeWithTag(
   config: NodeConfig,
   contractAddresses: ContractAddresses,
-  keystoreDir: string,
+  keystoreDir: string | undefined,
   tag: string,
   bootnodeAddr?: string,
-  blockTime?: number | undefined
+  blockTime?: number | undefined,
+  imageOverride?: string
 ): Promise<void> {
   await removeContainerIfExists(config.name);
 
   const hostname = config.name.replace(/^bee-factory-/, '');
-  const image = `${BEE_LOCAL_IMAGE}:${tag}`;
+  const image = imageOverride ?? `${BEE_LOCAL_IMAGE}:${tag}`;
   const cmd = buildBeeCmd(config, contractAddresses, bootnodeAddr, blockTime);
 
   const exposedPorts: Record<string, object> = {
@@ -251,8 +369,9 @@ export async function startBeeNodeWithTag(
     HostConfig: {
       PortBindings: portBindings,
       NetworkMode: DOCKER_NETWORK,
-      // writable so Bee can generate libp2p.key and pss.key alongside swarm.key
-      Binds: [`${keystoreDir}:/home/bee/.bee/keys/`],
+      // No bind mounts on /home/bee/.bee — keys + statestore must live inside
+      // the container's writable layer so `docker commit` captures them when
+      // publishing stateful images.
     },
     NetworkingConfig: {
       EndpointsConfig: {
@@ -260,6 +379,19 @@ export async function startBeeNodeWithTag(
       },
     },
   });
+
+  // Fresh mode: copy the deterministic swarm.key into the container before
+  // start so bee binds to the expected Ethereum address. Bee will generate
+  // libp2p_v2.key and pss.key itself on first run.
+  // Prebuilt mode (keystoreDir undefined): the committed image already has all
+  // three keys baked in — leave them alone.
+  if (keystoreDir) {
+    await runCommand(
+      'docker',
+      ['cp', `${keystoreDir}/.`, `${config.name}:/home/bee/.bee/keys/`],
+      { stdio: 'pipe' }
+    );
+  }
 
   await container.start();
 }
@@ -409,6 +541,75 @@ export async function waitForBeeReady(
   );
 }
 
+/**
+ * Poll /topology until the node has at least `minPeers` connected peers.
+ * Bee's /status reports isWarmingUp=false from cached state immediately after
+ * a restart from a committed image, so we need a separate peer-connectivity
+ * gate before any reserve-sample work will succeed.
+ */
+export async function waitForPeers(
+  apiPort: number,
+  minPeers: number,
+  timeoutMs: number
+): Promise<number> {
+  const deadline = Date.now() + timeoutMs;
+  const interval = 2000;
+  let lastConnected = 0;
+
+  while (Date.now() < deadline) {
+    try {
+      const body = await httpGetJson(`http://localhost:${apiPort}/topology`);
+      const connected = Number(body.connected ?? 0);
+      lastConnected = connected;
+      if (connected >= minPeers) return connected;
+    } catch {
+      // not ready yet
+    }
+    await sleep(interval);
+  }
+
+  throw new Error(
+    `Timed out waiting for ${minPeers} peer(s) on port ${apiPort} (${timeoutMs}ms). Last connected count: ${lastConnected}`
+  );
+}
+
+/**
+ * Poll /rchash until it returns 200. After restoring chain state and restarting
+ * Bee from a committed image, the reserve sampler needs the chain head to
+ * advance past a redistribution round and Bee to reprocess events before
+ * sampling chunks with proofs succeeds. Polling the actual endpoint is more
+ * reliable than a fixed sleep.
+ */
+export async function waitForRchashReady(apiPort: number, timeoutMs: number): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  const interval = 3000;
+  let lastError = 'no response';
+
+  while (Date.now() < deadline) {
+    try {
+      const addrs = await httpGetJson(`http://localhost:${apiPort}/addresses`);
+      const overlay = String(addrs.overlay ?? '');
+      if (overlay) {
+        const probe = await httpGetStatusAndBody(
+          `http://localhost:${apiPort}/rchash/0/${overlay}/${overlay}`,
+          20_000
+        );
+        if (probe.status === 200) return;
+        lastError = `status ${probe.status} body ${probe.body.slice(0, 200)}`;
+      } else {
+        lastError = 'overlay address not yet available';
+      }
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : String(err);
+    }
+    await sleep(interval);
+  }
+
+  throw new Error(
+    `Timed out waiting for rchash to become ready on port ${apiPort} (${timeoutMs}ms). Last: ${lastError}`
+  );
+}
+
 /** Returns true if the server replies with any HTTP status (even 4xx). */
 function httpGetAny(url: string): Promise<boolean> {
   return new Promise((resolve) => {
@@ -502,6 +703,32 @@ export async function getQueenBootnodeAddr(apiPort: number): Promise<string> {
   }
 
   throw new Error('Timed out waiting for queen bootnode address');
+}
+
+function httpGetStatusAndBody(url: string, timeoutMs: number): Promise<{ status: number; body: string }> {
+  return new Promise((resolve, reject) => {
+    const parsedUrl = new URL(url);
+    const options: http.RequestOptions = {
+      hostname: parsedUrl.hostname,
+      port: parsedUrl.port ? Number(parsedUrl.port) : 80,
+      path: parsedUrl.pathname + parsedUrl.search,
+      method: 'GET',
+      timeout: timeoutMs,
+    };
+
+    const req = http.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk: Buffer) => (data += chunk.toString()));
+      res.on('end', () => resolve({ status: res.statusCode ?? 0, body: data }));
+    });
+
+    req.on('error', reject);
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('Request timed out'));
+    });
+    req.end();
+  });
 }
 
 function httpGetJson(url: string): Promise<Record<string, unknown>> {

@@ -3,6 +3,7 @@ import ora from 'ora';
 import { ethers } from 'ethers';
 
 import {
+  ANVIL_CONTAINER,
   ANVIL_IMAGE,
   ANVIL_PORT,
   BEE_NODES,
@@ -24,7 +25,12 @@ import {
   waitForHttp,
   waitForContainerHttp,
   waitForBeeReady,
+  waitForPeers,
+  waitForRchashReady,
   getQueenBootnodeAddr,
+  hubImageName,
+  tryPullPrebuiltImages,
+  restoreAnvilState,
 } from '../docker/manager';
 import { generateTraffic } from '../services/traffic_generator';
 
@@ -52,8 +58,15 @@ export async function start(options: StartOptions): Promise<void> {
     }
   }
 
-  // 2. Pull Anvil image
-  {
+  // Check for pre-built hub images (master → latest). If all 6 images are
+  // available, pull them and skip the build + warmup steps entirely.
+  const usePrebuilt = !fresh && await tryPullPrebuiltImages(tag);
+  if (usePrebuilt) {
+    console.log(chalk.green(`✓ Pre-built images found — quickstart mode.\n`));
+  }
+
+  // 2. Pull Anvil image (skipped when using pre-built hub images)
+  if (!usePrebuilt) {
     const spinner = ora(`Pulling ${ANVIL_IMAGE}...`).start();
     try {
       await pullImageIfNeeded(ANVIL_IMAGE);
@@ -64,10 +77,8 @@ export async function start(options: StartOptions): Promise<void> {
     }
   }
 
-  // 3. Ensure Bee image — build from source if not present locally.
-  //    REACHABILITY_OVERRIDE_PUBLIC is a compile-time flag, so we must build
-  //    our own image rather than pulling the official ethersphere/bee image.
-  {
+  // 3. Ensure Bee image — skipped when using pre-built hub images
+  if (!usePrebuilt) {
     const localImage = `${BEE_LOCAL_IMAGE}:${tag}`;
     if (await beeImageExists(tag)) {
       console.log(chalk.green(`✓ Bee image ready: ${localImage}`));
@@ -103,7 +114,7 @@ export async function start(options: StartOptions): Promise<void> {
     const spinner = ora('Starting Anvil blockchain...').start();
     console.log(chalk.dim(`\n  Block time: ${blockTime ?? 'default (1)'} seconds\n`));
     try {
-      await startAnvil(blockTime);
+      await startAnvil(blockTime, usePrebuilt ? hubImageName(ANVIL_CONTAINER, tag) : undefined);
       spinner.text = 'Waiting for Anvil RPC to be ready...';
       await waitForHttp(`http://localhost:${ANVIL_PORT}`, 60_000);
       spinner.succeed(chalk.green(`Anvil running on port ${ANVIL_PORT}.`));
@@ -115,6 +126,17 @@ export async function start(options: StartOptions): Promise<void> {
 
   // 6. Deploy contracts + fund wallets, or restore from snapshot
   let addresses: ContractAddresses;
+
+  if (usePrebuilt) {
+    const spinner = ora('Restoring Anvil state from pre-built image...').start();
+    try {
+      addresses = await restoreAnvilState();
+      spinner.succeed(chalk.green('Anvil state restored from pre-built image.'));
+    } catch (err) {
+      spinner.fail(chalk.red('Failed to read contract addresses from pre-built image.'));
+      throw err;
+    }
+  } else {
   const useSnapshot = !fresh && hasSnapshot();
 
   if (useSnapshot) {
@@ -177,14 +199,18 @@ export async function start(options: StartOptions): Promise<void> {
       }
     }
   }
+  } // end else (not usePrebuilt)
 
-  // 7. Generate keystore files
-  let keystoreMap: Map<number, string>;
-  {
+  // 7. Generate keystore files. Skipped in prebuilt mode — the committed images
+  // already contain swarm.key / libp2p_v2.key / pss.key for each node.
+  const keystoreMap = new Map<number, string | undefined>();
+  if (!usePrebuilt) {
     const spinner = ora('Generating keystore files...').start();
     try {
       const results = await generateAllKeystores(BEE_NODES);
-      keystoreMap = new Map(results.map(({ node, keystoreDir }) => [node.index, keystoreDir]));
+      for (const { node, keystoreDir } of results) {
+        keystoreMap.set(node.index, keystoreDir);
+      }
       spinner.succeed(chalk.green('Keystore files generated.'));
     } catch (err) {
       spinner.fail(chalk.red('Failed to generate keystore files.'));
@@ -198,7 +224,7 @@ export async function start(options: StartOptions): Promise<void> {
   {
     const spinner = ora(`Starting queen node (${queen.name})...`).start();
     try {
-      await startBeeNodeWithTag(queen, addresses, keystoreMap.get(0)!, tag, undefined, blockTime);
+      await startBeeNodeWithTag(queen, addresses, keystoreMap.get(0), tag, undefined, blockTime, usePrebuilt ? hubImageName(queen.name, tag) : undefined);
       spinner.text = `Waiting for queen API at port ${queen.apiPort}...`;
       await waitForContainerHttp(queen.name, `http://localhost:${queen.apiPort}/health`, 120_000);
       spinner.succeed(chalk.green(`Queen node API ready on port ${queen.apiPort}.`));
@@ -227,7 +253,7 @@ export async function start(options: StartOptions): Promise<void> {
     const spinner = ora('Starting worker nodes...').start();
     try {
       await Promise.all(workers.map(async (node) => {
-        await startBeeNodeWithTag(node, addresses, keystoreMap.get(node.index)!, tag, queenBootnode, blockTime);
+        await startBeeNodeWithTag(node, addresses, keystoreMap.get(node.index), tag, queenBootnode, blockTime, usePrebuilt ? hubImageName(node.name, tag) : undefined);
         await waitForContainerHttp(node.name, `http://localhost:${node.apiPort}/health`, 120_000);
         spinner.info(chalk.green(`${node.name} API ready on port ${node.apiPort}.`));
         spinner.start('Starting worker nodes...');
@@ -255,8 +281,47 @@ export async function start(options: StartOptions): Promise<void> {
     }
   }
 
-  // 12. Buy a batch and start uploading until the Node 2 has at least 1 cheque
-  {
+  // 12. Ensure reserve sampler is ready
+  if (usePrebuilt) {
+    // Bee's /status reports isWarmingUp=false instantly when restarted from a
+    // committed image (the flag was already false at commit time), so explicit
+    // peer-connectivity polling is needed before chain advance + rchash work.
+    {
+      const spinner = ora('Waiting for Bee nodes to reconnect to peers...').start();
+      try {
+        await Promise.all(
+          BEE_NODES.slice(1).map((node) => waitForPeers(node.apiPort, 1, 120_000))
+        );
+        // Queen needs all workers connected to have a usable neighborhood.
+        await waitForPeers(BEE_NODES[0].apiPort, BEE_NODES.length - 1, 120_000);
+        spinner.succeed(chalk.green('All Bee nodes have reconnected to peers.'));
+      } catch (err) {
+        spinner.fail(chalk.red('Bee nodes failed to reconnect to peers.'));
+        throw err;
+      }
+    }
+
+    // After state restore, Bee nodes need to complete a full redistribution round
+    // to re-establish consensus_time before the reserve sampler becomes usable.
+    // Mine well past one round and poll rchash directly — a fixed sleep is too
+    // fragile because reserve indexing time varies with CI machine load.
+    {
+      const spinner = ora('Advancing chain and waiting for reserve sampler...').start();
+      try {
+        await fetch(`http://localhost:${ANVIL_PORT}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', method: 'anvil_mine', params: ['0xa0'], id: 1 }), // 160 blocks > 1 round
+        });
+        await waitForRchashReady(BEE_NODES[0].apiPort, 180_000);
+        spinner.succeed(chalk.green('Reserve sampler ready.'));
+      } catch (err) {
+        spinner.fail(chalk.red('Reserve sampler did not become ready.'));
+        throw err;
+      }
+    }
+  } else {
+    // Buy a batch and start uploading until Node 2 has at least 1 cheque
     const spinner = ora(`Ensuring Node 2 has at least 1 claimable cheque...`).start();
     try {
       await generateTraffic();

@@ -1,5 +1,6 @@
 node_modules/
 dist/
+src/snapshot/
 hardhat-artifacts/
 *.js.map
 *.d.ts

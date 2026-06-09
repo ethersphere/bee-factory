@@ -1,0 +1,140 @@
+name: Publish Docker Images
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Bee git ref to build (branch, tag, or commit — e.g. v2.5.0). Uses "master" if omitted.'
+        required: false
+        default: 'master'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run prepare
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Start bee-factory
+        run: ./bin/bee-factory.js start --fresh --tag ${{ inputs.tag || 'master' }}
+
+      - name: Commit and push images
+        run: |
+          INPUT_TAG="${{ inputs.tag || 'master' }}"
+          if [ "$INPUT_TAG" = "master" ]; then
+            TAGS=("latest")
+          else
+            TAGS=("$INPUT_TAG" "latest")
+          fi
+
+          ARCH="${{ matrix.arch }}"
+
+          # Stop bee containers BEFORE dumping anvil state. Bee's graceful
+          # shutdown flushes its batch store, freezing last_processed_block.
+          # Anvil keeps mining for a few more seconds, so its dumped chain head
+          # will be >= each bee's last_processed_block — meaning a restored
+          # cluster sees anvil slightly ahead and bee polls forward through the
+          # gap. Without this ordering, bee's batch store ends up ahead of the
+          # restored chain and bee aborts with a "chain regressed" safety check.
+          docker stop bee-factory-bee-0 bee-factory-bee-1 bee-factory-bee-2 bee-factory-bee-3 bee-factory-bee-4
+
+          # Dump the final Anvil chain state (post-traffic) and embed it in the
+          # container as a JSON file. On next start, bee-factory reads this file
+          # and calls anvil_loadState to restore the full chain state.
+          # Write the hex to a file first — it's too large to pass as a shell argument.
+          curl -s -X POST http://localhost:8545 \
+            -H "Content-Type: application/json" \
+            -d '{"jsonrpc":"2.0","method":"anvil_dumpState","params":[],"id":1}' \
+            | jq -r '.result' > /tmp/anvil-state-hex.txt
+          ADDRESSES=$(jq -c '.addresses' src/snapshot/anvil-state.json)
+          jq -n --rawfile state /tmp/anvil-state-hex.txt --argjson addresses "$ADDRESSES" \
+            '{"state":($state|rtrimstr("\n")),"addresses":$addresses}' > /tmp/anvil-state.json
+          docker cp /tmp/anvil-state.json bee-factory-anvil:/anvil-state.json
+
+          for TAG in "${TAGS[@]}"; do
+            docker commit bee-factory-anvil "ethersphere/bee-factory-blockchain:${TAG}-${ARCH}"
+            docker push "ethersphere/bee-factory-blockchain:${TAG}-${ARCH}"
+
+            docker commit bee-factory-bee-0 "ethersphere/bee-factory-queen:${TAG}-${ARCH}"
+            docker push "ethersphere/bee-factory-queen:${TAG}-${ARCH}"
+
+            for I in 1 2 3 4; do
+              docker commit "bee-factory-bee-${I}" "ethersphere/bee-factory-worker-${I}:${TAG}-${ARCH}"
+              docker push "ethersphere/bee-factory-worker-${I}:${TAG}-${ARCH}"
+            done
+          done
+
+      - name: Stop bee-factory
+        if: always()
+        run: ./bin/bee-factory.js stop
+
+  manifest:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Create and push multi-arch manifests
+        run: |
+          INPUT_TAG="${{ inputs.tag || 'master' }}"
+          if [ "$INPUT_TAG" = "master" ]; then
+            TAGS=("latest")
+          else
+            TAGS=("$INPUT_TAG" "latest")
+          fi
+
+          IMAGES=(
+            "ethersphere/bee-factory-blockchain"
+            "ethersphere/bee-factory-queen"
+            "ethersphere/bee-factory-worker-1"
+            "ethersphere/bee-factory-worker-2"
+            "ethersphere/bee-factory-worker-3"
+            "ethersphere/bee-factory-worker-4"
+          )
+
+          for TAG in "${TAGS[@]}"; do
+            for IMAGE in "${IMAGES[@]}"; do
+              docker manifest create "${IMAGE}:${TAG}" \
+                --amend "${IMAGE}:${TAG}-amd64" \
+                --amend "${IMAGE}:${TAG}-arm64"
+              docker manifest push "${IMAGE}:${TAG}"
+            done
+          done
+
+  smoke-test:
+    needs: manifest
+    uses: ./.github/workflows/smoke-test.yaml
