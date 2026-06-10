@@ -34,10 +34,10 @@ export interface NodeConfig {
 
 export const BEE_NODES: NodeConfig[] = [
   { index: 0, name: 'bee-factory-bee-0', apiPort: 1633, p2pPort: 1634, privateKey: BEE_NODE_KEYS[0] },
-  { index: 1, name: 'bee-factory-bee-1', apiPort: 11633, p2pPort: 11634, privateKey: BEE_NODE_KEYS[1] },
-  { index: 2, name: 'bee-factory-bee-2', apiPort: 21633, p2pPort: 21634, privateKey: BEE_NODE_KEYS[2] },
-  { index: 3, name: 'bee-factory-bee-3', apiPort: 31633, p2pPort: 31634, privateKey: BEE_NODE_KEYS[3] },
-  { index: 4, name: 'bee-factory-bee-4', apiPort: 41633, p2pPort: 41634, privateKey: BEE_NODE_KEYS[4] },
+  { index: 1, name: 'bee-factory-bee-1', apiPort: 1635, p2pPort: 1636, privateKey: BEE_NODE_KEYS[1] },
+  { index: 2, name: 'bee-factory-bee-2', apiPort: 1637, p2pPort: 1638, privateKey: BEE_NODE_KEYS[2] },
+  { index: 3, name: 'bee-factory-bee-3', apiPort: 1639, p2pPort: 1640, privateKey: BEE_NODE_KEYS[3] },
+  { index: 4, name: 'bee-factory-bee-4', apiPort: 1641, p2pPort: 1642, privateKey: BEE_NODE_KEYS[4] },
 ];
 
 export const ETH_FUND_AMOUNT = '1';   // 1 ETH
