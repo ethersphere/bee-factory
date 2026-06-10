@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.1.0](https://github.com/ethersphere/bee-factory/compare/bee-factory-v1.0.1...bee-factory-v1.1.0) (2026-06-10)
+
+
+### Features
+
+* cache Docker images for certain tags ([#309](https://github.com/ethersphere/bee-factory/issues/309)) ([048050b](https://github.com/ethersphere/bee-factory/commit/048050b603d02bf8054f4c66f117aaa68b50c0d7))
+* print node wallet private keys and addresses ([#304](https://github.com/ethersphere/bee-factory/issues/304)) ([fbabc6f](https://github.com/ethersphere/bee-factory/commit/fbabc6f589f52e090ed7336602764e3386b98638))
+
+
+### Bug Fixes
+
+* cheque generation sometimes gets stuck ([#307](https://github.com/ethersphere/bee-factory/issues/307)) ([3b10197](https://github.com/ethersphere/bee-factory/commit/3b10197c2ef55328df874ca04300621cc2f6410f))
+* force full peer mesh after warmup ([#311](https://github.com/ethersphere/bee-factory/issues/311)) ([5677d08](https://github.com/ethersphere/bee-factory/commit/5677d08e69df82d45664d9b2d2c1bd63d7950596))
+* update node ports ([#312](https://github.com/ethersphere/bee-factory/issues/312)) ([2ff43e1](https://github.com/ethersphere/bee-factory/commit/2ff43e1456bc216bd3a98673981566feb39d0489))
+
 ## [1.0.1](https://github.com/ethersphere/bee-factory/compare/bee-factory-v1.0.0...bee-factory-v1.0.1) (2026-05-20)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@ethersphere/bee-factory",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Local Ethereum Swarm development stack",
   "bin": {
     "bee-factory": "./bin/bee-factory.js"
