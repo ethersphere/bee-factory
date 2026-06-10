@@ -20,6 +20,6 @@ jobs:
           app-id: ${{ secrets.BEE_RUNNER_APP_ID }}
           private-key: ${{ secrets.BEE_RUNNER_KEY }}
 
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
         with:
           token: ${{ steps.app-token.outputs.token }}
