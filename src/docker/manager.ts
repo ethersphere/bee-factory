@@ -295,12 +295,40 @@ export async function startAnvil(blockTime?: number | undefined, imageOverride?:
   await container.start();
 }
 
-function buildBeeCmd(
+// Cache of `bee start --help` flag support per image, keyed by image ref.
+// Probing spawns a container, so we only do it once per image.
+const beeFlagSupportCache = new Map<string, Set<string>>();
+
+/**
+ * Returns true if the bee binary in `image` advertises `flag` in its
+ * `start --help` output. Newer bee (>= v2.8.1-rc3) requires
+ * `--bzz-token-address` on custom networks, while older versions reject it as
+ * an unknown flag — so we add it only when the binary actually supports it.
+ */
+async function beeSupportsFlag(image: string, flag: string): Promise<boolean> {
+  let flags = beeFlagSupportCache.get(image);
+  if (!flags) {
+    const help = await new Promise<string>((resolve) => {
+      const proc = spawn('docker', ['run', '--rm', '--entrypoint', 'bee', image, 'start', '--help']);
+      let out = '';
+      proc.stdout.on('data', (chunk: Buffer) => (out += chunk.toString()));
+      proc.stderr.on('data', (chunk: Buffer) => (out += chunk.toString()));
+      proc.on('close', () => resolve(out));
+      proc.on('error', () => resolve(out));
+    });
+    flags = new Set((help.match(/--[a-z0-9-]+/g) ?? []));
+    beeFlagSupportCache.set(image, flags);
+  }
+  return flags.has(flag);
+}
+
+async function buildBeeCmd(
   config: NodeConfig,
   contractAddresses: ContractAddresses,
+  image: string,
   bootnodeAddr?: string,
   blockTime?: number | undefined
-): string[] {
+): Promise<string[]> {
   const cmd: string[] = [
     'start',
     '--full-node',
@@ -328,6 +356,12 @@ function buildBeeCmd(
     '--withdrawal-addresses-whitelist="0xd238ff944bacb478cbed5efcae784d7bf4f2ff80"'
   ];
 
+  // Newer bee requires the BZZ token address on custom networks; older versions
+  // reject the flag as unknown. Only pass it when the binary supports it.
+  if (await beeSupportsFlag(image, '--bzz-token-address')) {
+    cmd.push(`--bzz-token-address=${contractAddresses.bzzToken}`);
+  }
+
   if (bootnodeAddr) {
     cmd.push(`--bootnode=${bootnodeAddr}`);
   }
@@ -348,7 +382,7 @@ export async function startBeeNodeWithTag(
 
   const hostname = config.name.replace(/^bee-factory-/, '');
   const image = imageOverride ?? `${BEE_LOCAL_IMAGE}:${tag}`;
-  const cmd = buildBeeCmd(config, contractAddresses, bootnodeAddr, blockTime);
+  const cmd = await buildBeeCmd(config, contractAddresses, image, bootnodeAddr, blockTime);
 
   const exposedPorts: Record<string, object> = {
     [`${config.apiPort}/tcp`]: {},
