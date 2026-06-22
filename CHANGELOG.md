@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/ethersphere/bee-factory/compare/bee-factory-v1.1.0...bee-factory-v1.1.1) (2026-06-22)
+
+
+### Bug Fixes
+
+* support new flags with backward compatibility ([#315](https://github.com/ethersphere/bee-factory/issues/315)) ([97e404d](https://github.com/ethersphere/bee-factory/commit/97e404dc992d78006fb1626d452b0cbdeb0e2337))
+
 ## [1.1.0](https://github.com/ethersphere/bee-factory/compare/bee-factory-v1.0.1...bee-factory-v1.1.0) (2026-06-10)
 
 
