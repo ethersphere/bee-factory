@@ -92,3 +92,7 @@ Once the cheque is in place, the chain is advanced by 160 blocks (more than one 
 - Node password: `bee-factory`
 - Snapshots: `--fresh` redeploys contracts and saves a new snapshot; subsequent normal starts load from it instantly.
 - Uses [Foundry test keys](https://www.getfoundry.sh/anvil#default-accounts) — never use in production.
+
+## Troubleshooting
+
+Running into issues? See [docs/troubleshooting.md](docs/troubleshooting.md).
