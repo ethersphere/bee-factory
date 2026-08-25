@@ -1,0 +1,40 @@
+name: Daily Published Check
+
+# Does a fresh install still work?
+
+on:
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+
+jobs:
+  start:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Install the published CLI
+        run: npm install -g @ethersphere/bee-factory
+
+      - name: Start bee factory
+        run: bee-factory start
+
+      - name: Container logs
+        if: failure()
+        run: |
+          for c in bee-factory-anvil bee-factory-bee-0 bee-factory-bee-1 \
+                   bee-factory-bee-2 bee-factory-bee-3 bee-factory-bee-4; do
+            echo "::group::$c"
+            docker logs --tail 100 "$c" 2>&1 || echo "(no container)"
+            echo "::endgroup::"
+          done
+
+      - name: Stop bee factory
+        if: always()
+        run: bee-factory stop || true
