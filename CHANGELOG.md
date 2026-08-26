@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/ethersphere/bee-factory/compare/bee-factory-v1.1.1...bee-factory-v1.1.2) (2026-08-26)
+
+
+### Bug Fixes
+
+* resync clock ([#319](https://github.com/ethersphere/bee-factory/issues/319)) ([ab1a14d](https://github.com/ethersphere/bee-factory/commit/ab1a14d9c536641b5494f5433c13c52f68979d37))
+
 ## [1.1.1](https://github.com/ethersphere/bee-factory/compare/bee-factory-v1.1.0...bee-factory-v1.1.1) (2026-06-22)
 
 
