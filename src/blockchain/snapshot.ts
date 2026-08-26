@@ -46,6 +46,61 @@ export async function saveSnapshot(addresses: ContractAddresses): Promise<void> 
   fs.writeFileSync(path.join(dir, 'anvil-state.json'), JSON.stringify(data, null, 2));
 }
 
+// Bee refuses to start on a chain whose head is older than this (maxDelay in
+// bee's pkg/node/chain.go, enforced by transaction.WaitSynced).
+const MAX_CLOCK_DRIFT_SECONDS = 60;
+
+/**
+ * Re-anchors the chain clock to wall clock after a state restore.
+ *
+ * Since foundry #15760 ("continue the saved timeline after loading state", in nightlies
+ * from 2026-08-07), anvil_loadState resets the node clock to the timestamp stored in the
+ * dump and keeps mining from there — so a restored chain stays exactly as far behind wall
+ * clock as the dump is old. Bee's startup sync check then never passes and every node hangs
+ * before libp2p comes up, which surfaces here as a queen bootnode timeout.
+ *
+ * On older anvil builds, which left the clock at wall time, this is a no-op.
+ */
+export async function resyncChainClock(): Promise<{ driftBefore: number; driftAfter: number }> {
+  const driftBefore = await chainClockDrift();
+
+  try {
+    await anvilJsonRpc('evm_setTime', [nowSeconds()]);
+  } catch {
+    // Anvil builds without evm_setTime never re-anchored the clock on load either, so
+    // their restored chain already runs at wall time. If it doesn't, the drift check
+    // below reports it.
+  }
+
+  // Bee reads the latest block header, not the pending block env, so the new timestamp
+  // only becomes visible once a block is mined. Interval mining would get there within
+  // --block-time seconds; mining explicitly removes the race.
+  await anvilJsonRpc('anvil_mine', ['0x1']);
+
+  const driftAfter = await chainClockDrift();
+  if (driftAfter > MAX_CLOCK_DRIFT_SECONDS) {
+    throw new Error(
+      `Chain head is ${driftAfter}s behind wall clock after re-anchoring (limit ${MAX_CLOCK_DRIFT_SECONDS}s). ` +
+      `Bee would hang in its startup blockchain sync check. Run with --fresh to redeploy from scratch.`
+    );
+  }
+
+  return { driftBefore, driftAfter };
+}
+
+/** Seconds by which the chain head trails wall clock. */
+async function chainClockDrift(): Promise<number> {
+  const block = (await anvilJsonRpc('eth_getBlockByNumber', ['latest', false])) as {
+    timestamp: string;
+  } | null;
+  if (!block) throw new Error('Anvil returned no latest block');
+  return nowSeconds() - parseInt(block.timestamp, 16);
+}
+
+function nowSeconds(): number {
+  return Math.floor(Date.now() / 1000);
+}
+
 function anvilJsonRpc(method: string, params: unknown[]): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({ jsonrpc: '2.0', method, params, id: 1 });

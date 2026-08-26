@@ -12,7 +12,7 @@ import {
 } from '../config';
 import { deployContracts, ContractAddresses } from '../blockchain/deploy';
 import { fundNodes } from '../blockchain/fund';
-import { hasSnapshot, applySnapshot, saveSnapshot } from '../blockchain/snapshot';
+import { hasSnapshot, applySnapshot, saveSnapshot, resyncChainClock } from '../blockchain/snapshot';
 import { generateAllKeystores } from '../keystore';
 import {
   cleanupAll,
@@ -126,11 +126,13 @@ export async function start(options: StartOptions): Promise<void> {
 
   // 6. Deploy contracts + fund wallets, or restore from snapshot
   let addresses: ContractAddresses;
+  let restoredState = false;
 
   if (usePrebuilt) {
     const spinner = ora('Restoring Anvil state from pre-built image...').start();
     try {
       addresses = await restoreAnvilState();
+      restoredState = true;
       spinner.succeed(chalk.green('Anvil state restored from pre-built image.'));
     } catch (err) {
       spinner.fail(chalk.red('Failed to read contract addresses from pre-built image.'));
@@ -143,6 +145,7 @@ export async function start(options: StartOptions): Promise<void> {
     const spinner = ora('Loading Anvil state from snapshot...').start();
     try {
       addresses = await applySnapshot();
+      restoredState = true;
       spinner.succeed(chalk.green('Anvil state loaded from snapshot (contracts + funded wallets restored).'));
     } catch (err) {
       spinner.fail(chalk.red('Failed to load snapshot.'));
@@ -200,6 +203,25 @@ export async function start(options: StartOptions): Promise<void> {
     }
   }
   } // end else (not usePrebuilt)
+
+  // 6b. A restored chain carries the timestamps it was dumped with, and recent Anvil
+  // builds keep mining on that old timeline. Bee rejects a chain head older than a
+  // minute and blocks at startup, so pull the clock back to wall time before any node
+  // starts. Freshly deployed chains are already current.
+  if (restoredState) {
+    const spinner = ora('Re-anchoring chain clock to wall clock...').start();
+    try {
+      const { driftBefore, driftAfter } = await resyncChainClock();
+      spinner.succeed(
+        chalk.green(
+          `Chain clock re-anchored (head was ${driftBefore}s behind, now ${driftAfter}s).`
+        )
+      );
+    } catch (err) {
+      spinner.fail(chalk.red('Failed to re-anchor chain clock.'));
+      throw err;
+    }
+  }
 
   // 7. Generate keystore files. Skipped in prebuilt mode — the committed images
   // already contain swarm.key / libp2p_v2.key / pss.key for each node.
