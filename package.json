@@ -29,7 +29,6 @@
     "yargs": "^17.7.2"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@openzeppelin/contracts": "4.8.2",
     "@openzeppelin/contracts-v3": "npm:@openzeppelin/contracts@^3.4.2",
     "@types/dockerode": "^3.3.28",
