@@ -9,6 +9,8 @@ import {
   BEE_NODES,
   BEE_LOCAL_IMAGE,
   BEE_REPO_URL,
+  NodeConfig,
+  hostPort,
 } from '../config';
 import { deployContracts, ContractAddresses } from '../blockchain/deploy';
 import { fundNodes } from '../blockchain/fund';
@@ -33,15 +35,17 @@ import {
   restoreAnvilState,
 } from '../docker/manager';
 import { generateTraffic } from '../services/traffic_generator';
+import { assertPortsFree } from '../ports';
 
 export interface StartOptions {
   tag: string;
   fresh: boolean;
   blockTime: number | undefined;
+  portOffset: number;
 }
 
 export async function start(options: StartOptions): Promise<void> {
-  const { tag, fresh, blockTime } = options;
+  const { portOffset } = options;
 
   console.log(chalk.bold.cyan('\nbee-factory — Local Bee Stack'));
   console.log(chalk.dim('────────────────────────────────────────\n'));
@@ -57,6 +61,38 @@ export async function start(options: StartOptions): Promise<void> {
       throw err;
     }
   }
+
+  {
+    const spinner = ora('Checking host ports...').start();
+    try {
+      await assertPortsFree([
+        hostPort(ANVIL_PORT, portOffset),
+        ...BEE_NODES.flatMap((node) => [hostPort(node.apiPort, portOffset), hostPort(node.p2pPort, portOffset)]),
+      ]);
+      spinner.succeed(chalk.green('Host ports available.'));
+    } catch (err) {
+      spinner.fail(chalk.red('Host ports unavailable.'));
+      throw err;
+    }
+  }
+
+  try {
+    await launch(options);
+  } catch (err) {
+    const spinner = ora('Removing partially started containers...').start();
+    await cleanupAll().then(
+      () => spinner.succeed(chalk.green('Partially started containers removed.')),
+      (cleanupErr) => spinner.warn(chalk.yellow(`Cleanup after failure failed: ${String(cleanupErr)}`))
+    );
+    throw err;
+  }
+}
+
+async function launch(options: StartOptions): Promise<void> {
+  const { tag, fresh, blockTime, portOffset } = options;
+  const anvilPort = hostPort(ANVIL_PORT, portOffset);
+  const anvilUrl = `http://localhost:${anvilPort}`;
+  const apiPortOf = (node: NodeConfig) => hostPort(node.apiPort, portOffset);
 
   // Check for pre-built hub images (master → latest). If all 6 images are
   // available, pull them and skip the build + warmup steps entirely.
@@ -114,10 +150,10 @@ export async function start(options: StartOptions): Promise<void> {
     const spinner = ora('Starting Anvil blockchain...').start();
     console.log(chalk.dim(`\n  Block time: ${blockTime ?? 'default (1)'} seconds\n`));
     try {
-      await startAnvil(blockTime, usePrebuilt ? hubImageName(ANVIL_CONTAINER, tag) : undefined);
+      await startAnvil(portOffset, blockTime, usePrebuilt ? hubImageName(ANVIL_CONTAINER, tag) : undefined);
       spinner.text = 'Waiting for Anvil RPC to be ready...';
-      await waitForHttp(`http://localhost:${ANVIL_PORT}`, 60_000);
-      spinner.succeed(chalk.green(`Anvil running on port ${ANVIL_PORT}.`));
+      await waitForHttp(anvilUrl, 60_000);
+      spinner.succeed(chalk.green(`Anvil running on port ${anvilPort}.`));
     } catch (err) {
       spinner.fail(chalk.red('Failed to start Anvil.'));
       throw err;
@@ -131,7 +167,7 @@ export async function start(options: StartOptions): Promise<void> {
   if (usePrebuilt) {
     const spinner = ora('Restoring Anvil state from pre-built image...').start();
     try {
-      addresses = await restoreAnvilState();
+      addresses = await restoreAnvilState(anvilPort);
       restoredState = true;
       spinner.succeed(chalk.green('Anvil state restored from pre-built image.'));
     } catch (err) {
@@ -144,7 +180,7 @@ export async function start(options: StartOptions): Promise<void> {
   if (useSnapshot) {
     const spinner = ora('Loading Anvil state from snapshot...').start();
     try {
-      addresses = await applySnapshot();
+      addresses = await applySnapshot(anvilPort);
       restoredState = true;
       spinner.succeed(chalk.green('Anvil state loaded from snapshot (contracts + funded wallets restored).'));
     } catch (err) {
@@ -160,7 +196,7 @@ export async function start(options: StartOptions): Promise<void> {
     {
       const spinner = ora('Deploying smart contracts...').start();
       try {
-        const provider = new ethers.JsonRpcProvider(`http://localhost:${ANVIL_PORT}`);
+        const provider = new ethers.JsonRpcProvider(anvilUrl);
         addresses = await deployContracts(provider);
         spinner.succeed(chalk.green('Smart contracts deployed.'));
         console.log(chalk.dim('  BZZ Token:      ') + chalk.white(addresses.bzzToken));
@@ -181,7 +217,7 @@ export async function start(options: StartOptions): Promise<void> {
     {
       const spinner = ora('Funding Bee node wallets...').start();
       try {
-        const provider = new ethers.JsonRpcProvider(`http://localhost:${ANVIL_PORT}`);
+        const provider = new ethers.JsonRpcProvider(anvilUrl);
         await fundNodes(provider, addresses.bzzToken);
         spinner.succeed(chalk.green('Bee wallets funded (1 ETH + 100 BZZ each).'));
       } catch (err) {
@@ -194,7 +230,7 @@ export async function start(options: StartOptions): Promise<void> {
     {
       const spinner = ora('Saving Anvil state snapshot...').start();
       try {
-        await saveSnapshot(addresses);
+        await saveSnapshot(addresses, anvilPort);
         spinner.succeed(chalk.green('Anvil state snapshot saved — future starts will load instantly.'));
       } catch (err) {
         // Non-fatal: snapshot saving is best-effort
@@ -211,7 +247,7 @@ export async function start(options: StartOptions): Promise<void> {
   if (restoredState) {
     const spinner = ora('Re-anchoring chain clock to wall clock...').start();
     try {
-      const { driftBefore, driftAfter } = await resyncChainClock();
+      const { driftBefore, driftAfter } = await resyncChainClock(anvilPort);
       spinner.succeed(
         chalk.green(
           `Chain clock re-anchored (head was ${driftBefore}s behind, now ${driftAfter}s).`
@@ -246,10 +282,10 @@ export async function start(options: StartOptions): Promise<void> {
   {
     const spinner = ora(`Starting queen node (${queen.name})...`).start();
     try {
-      await startBeeNodeWithTag(queen, addresses, keystoreMap.get(0), tag, undefined, blockTime, usePrebuilt ? hubImageName(queen.name, tag) : undefined);
-      spinner.text = `Waiting for queen API at port ${queen.apiPort}...`;
-      await waitForContainerHttp(queen.name, `http://localhost:${queen.apiPort}/health`, 120_000);
-      spinner.succeed(chalk.green(`Queen node API ready on port ${queen.apiPort}.`));
+      await startBeeNodeWithTag(queen, portOffset, addresses, keystoreMap.get(0), tag, undefined, blockTime, usePrebuilt ? hubImageName(queen.name, tag) : undefined);
+      spinner.text = `Waiting for queen API at port ${apiPortOf(queen)}...`;
+      await waitForContainerHttp(queen.name, `http://localhost:${apiPortOf(queen)}/health`, 120_000);
+      spinner.succeed(chalk.green(`Queen node API ready on port ${apiPortOf(queen)}.`));
     } catch (err) {
       spinner.fail(chalk.red(`Failed to start queen node.`));
       throw err;
@@ -261,7 +297,7 @@ export async function start(options: StartOptions): Promise<void> {
   {
     const spinner = ora('Fetching queen bootnode address...').start();
     try {
-      queenBootnode = await getQueenBootnodeAddr(queen.apiPort);
+      queenBootnode = await getQueenBootnodeAddr(apiPortOf(queen));
       spinner.succeed(chalk.green(`Queen bootnode: ${queenBootnode}`));
     } catch (err) {
       spinner.fail(chalk.red('Failed to get queen bootnode address.'));
@@ -275,9 +311,9 @@ export async function start(options: StartOptions): Promise<void> {
     const spinner = ora('Starting worker nodes...').start();
     try {
       await Promise.all(workers.map(async (node) => {
-        await startBeeNodeWithTag(node, addresses, keystoreMap.get(node.index), tag, queenBootnode, blockTime, usePrebuilt ? hubImageName(node.name, tag) : undefined);
-        await waitForContainerHttp(node.name, `http://localhost:${node.apiPort}/health`, 120_000);
-        spinner.info(chalk.green(`${node.name} API ready on port ${node.apiPort}.`));
+        await startBeeNodeWithTag(node, portOffset, addresses, keystoreMap.get(node.index), tag, queenBootnode, blockTime, usePrebuilt ? hubImageName(node.name, tag) : undefined);
+        await waitForContainerHttp(node.name, `http://localhost:${apiPortOf(node)}/health`, 120_000);
+        spinner.info(chalk.green(`${node.name} API ready on port ${apiPortOf(node)}.`));
         spinner.start('Starting worker nodes...');
       }));
       spinner.succeed(chalk.green('All worker nodes ready.'));
@@ -294,7 +330,7 @@ export async function start(options: StartOptions): Promise<void> {
     const spinner = ora('Waiting for all nodes to finish warming up...').start();
     try {
       await Promise.all(
-        BEE_NODES.map((node) => waitForBeeReady(node.name, node.apiPort, 120_000))
+        BEE_NODES.map((node) => waitForBeeReady(node.name, apiPortOf(node), 120_000))
       );
       spinner.succeed(chalk.green('All nodes warmed up.'));
     } catch (err) {
@@ -311,7 +347,7 @@ export async function start(options: StartOptions): Promise<void> {
   {
     const spinner = ora('Forming peer mesh...').start();
     try {
-      await formPeerMesh(BEE_NODES);
+      await formPeerMesh(BEE_NODES.map((node) => ({ apiPort: apiPortOf(node) })));
       spinner.succeed(chalk.green('Peer mesh formed.'));
     } catch (err) {
       spinner.fail(chalk.red('Failed to form peer mesh.'));
@@ -329,12 +365,12 @@ export async function start(options: StartOptions): Promise<void> {
     {
       const spinner = ora('Advancing chain and waiting for reserve sampler...').start();
       try {
-        await fetch(`http://localhost:${ANVIL_PORT}`, {
+        await fetch(anvilUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ jsonrpc: '2.0', method: 'anvil_mine', params: ['0xa0'], id: 1 }), // 160 blocks > 1 round
         });
-        await waitForRchashReady(BEE_NODES[0].apiPort, 180_000);
+        await waitForRchashReady(apiPortOf(queen), 180_000);
         spinner.succeed(chalk.green('Reserve sampler ready.'));
       } catch (err) {
         spinner.fail(chalk.red('Reserve sampler did not become ready.'));
@@ -345,7 +381,7 @@ export async function start(options: StartOptions): Promise<void> {
     // Buy a batch and start uploading until Node 2 has at least 1 cheque
     const spinner = ora(`Ensuring Node 2 has at least 1 claimable cheque...`).start();
     try {
-      await generateTraffic();
+      await generateTraffic(portOffset);
       spinner.succeed(chalk.green(`Worker Node 2 has at least 1 cheque.`));
     } catch (err) {
       spinner.fail(chalk.red('Failed to generate traffic and cheques.'));
@@ -359,7 +395,7 @@ export async function start(options: StartOptions): Promise<void> {
     {
       const spinner = ora('Advancing chain past redistribution round for chunk eligibility...').start();
       try {
-        await fetch(`http://localhost:${ANVIL_PORT}`, {
+        await fetch(anvilUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ jsonrpc: '2.0', method: 'anvil_mine', params: ['0xa0'], id: 1 }), // 160 blocks > 1 round
@@ -374,10 +410,10 @@ export async function start(options: StartOptions): Promise<void> {
   }
 
   // 13. Summary table
-  printSummary(addresses, tag);
+  printSummary(addresses, tag, portOffset);
 }
 
-function printSummary(addresses: ContractAddresses, tag: string): void {
+function printSummary(addresses: ContractAddresses, tag: string, portOffset: number): void {
   console.log('\n' + chalk.bold.cyan('════════════════════════════════════════'));
   console.log(chalk.bold.cyan('  bee-factory Stack is Running'));
   console.log(chalk.bold.cyan('════════════════════════════════════════'));
@@ -392,8 +428,8 @@ function printSummary(addresses: ContractAddresses, tag: string): void {
     ['────────────────', '────────', '────────'],
     ...BEE_NODES.map((n) => [
       n.name,
-      String(n.apiPort),
-      String(n.p2pPort),
+      String(hostPort(n.apiPort, portOffset)),
+      String(hostPort(n.p2pPort, portOffset)),
     ]),
   ];
 
@@ -407,7 +443,7 @@ function printSummary(addresses: ContractAddresses, tag: string): void {
   }
 
   console.log();
-  console.log(chalk.bold('Anvil RPC:') + '  ' + chalk.white(`http://localhost:8545`));
+  console.log(chalk.bold('Anvil RPC:') + '  ' + chalk.white(`http://localhost:${hostPort(ANVIL_PORT, portOffset)}`));
   console.log(chalk.bold('Chain ID: ') + '  ' + chalk.white('1337'));
   console.log();
   console.log(chalk.bold('Smart Contracts:'));

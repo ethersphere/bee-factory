@@ -40,5 +40,24 @@ export const BEE_NODES: NodeConfig[] = [
   { index: 4, name: 'bee-factory-bee-4', apiPort: 1641, p2pPort: 1642, privateKey: BEE_NODE_KEYS[4] },
 ];
 
+const MAX_PORT = 65535;
+const HIGHEST_CONTAINER_PORT = Math.max(ANVIL_PORT, ...BEE_NODES.map((n) => n.p2pPort));
+
+export function resolvePortOffset(flag?: number): number {
+  const raw = flag ?? (process.env.BEE_FACTORY_PORT_OFFSET || 0);
+  const offset = Number(raw);
+  const maxOffset = MAX_PORT - HIGHEST_CONTAINER_PORT;
+
+  if (!Number.isInteger(offset) || offset < 0 || offset > maxOffset) {
+    throw new Error(`Invalid port offset "${raw}": must be an integer between 0 and ${maxOffset}.`);
+  }
+
+  return offset;
+}
+
+export function hostPort(containerPort: number, offset: number): number {
+  return containerPort + offset;
+}
+
 export const ETH_FUND_AMOUNT = '1';   // 1 ETH
 export const BZZ_FUND_AMOUNT = '100'; // 100 BZZ (with 16 decimals)

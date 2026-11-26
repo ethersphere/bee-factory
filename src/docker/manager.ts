@@ -17,6 +17,7 @@ import {
   BEE_NODES,
   DEFAULT_BLOCK_TIME_IN_SECONDS,
   NodeConfig,
+  hostPort,
 } from '../config';
 
 const docker = new Dockerode();
@@ -143,24 +144,24 @@ interface AnvilStateFile {
   addresses: ContractAddresses;
 }
 
-export async function restoreAnvilState(): Promise<ContractAddresses> {
+export async function restoreAnvilState(anvilPort: number): Promise<ContractAddresses> {
   const tmpFile = path.join(os.tmpdir(), 'bee-factory-anvil-restore.json');
   try {
     await runCommand('docker', ['cp', `${ANVIL_CONTAINER}:/anvil-state.json`, tmpFile], { stdio: 'pipe' });
     const data: AnvilStateFile = JSON.parse(fs.readFileSync(tmpFile, 'utf8'));
-    await anvilLoadStateRpc(data.state);
+    await anvilLoadStateRpc(anvilPort, data.state);
     return data.addresses;
   } finally {
     if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
   }
 }
 
-function anvilLoadStateRpc(state: string): Promise<void> {
+function anvilLoadStateRpc(anvilPort: number, state: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({ jsonrpc: '2.0', method: 'anvil_loadState', params: [state], id: 1 });
     const options: http.RequestOptions = {
       hostname: 'localhost',
-      port: ANVIL_PORT,
+      port: anvilPort,
       path: '/',
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
@@ -258,7 +259,7 @@ export async function stopAndRemoveContainer(name: string): Promise<void> {
   await removeContainerIfExists(name);
 }
 
-export async function startAnvil(blockTime?: number | undefined, imageOverride?: string): Promise<void> {
+export async function startAnvil(portOffset: number, blockTime?: number | undefined, imageOverride?: string): Promise<void> {
   await removeContainerIfExists(ANVIL_CONTAINER);
 
   // The foundry image uses ENTRYPOINT ["/bin/sh", "-c"], so Cmd must be a
@@ -281,7 +282,7 @@ export async function startAnvil(blockTime?: number | undefined, imageOverride?:
     ExposedPorts: { [`${ANVIL_PORT}/tcp`]: {} },
     HostConfig: {
       PortBindings: {
-        [`${ANVIL_PORT}/tcp`]: [{ HostIp: '0.0.0.0', HostPort: String(ANVIL_PORT) }],
+        [`${ANVIL_PORT}/tcp`]: [{ HostIp: '0.0.0.0', HostPort: String(hostPort(ANVIL_PORT, portOffset)) }],
       },
       NetworkMode: DOCKER_NETWORK,
     },
@@ -371,6 +372,7 @@ async function buildBeeCmd(
 
 export async function startBeeNodeWithTag(
   config: NodeConfig,
+  portOffset: number,
   contractAddresses: ContractAddresses,
   keystoreDir: string | undefined,
   tag: string,
@@ -390,8 +392,8 @@ export async function startBeeNodeWithTag(
   };
 
   const portBindings: Record<string, Array<{ HostIp: string; HostPort: string }>> = {
-    [`${config.apiPort}/tcp`]: [{ HostIp: '0.0.0.0', HostPort: String(config.apiPort) }],
-    [`${config.p2pPort}/tcp`]: [{ HostIp: '0.0.0.0', HostPort: String(config.p2pPort) }],
+    [`${config.apiPort}/tcp`]: [{ HostIp: '0.0.0.0', HostPort: String(hostPort(config.apiPort, portOffset)) }],
+    [`${config.p2pPort}/tcp`]: [{ HostIp: '0.0.0.0', HostPort: String(hostPort(config.p2pPort, portOffset)) }],
   };
 
   const container = await docker.createContainer({

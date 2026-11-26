@@ -2,7 +2,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
 import { ContractAddresses } from './deploy';
-import { ANVIL_PORT } from '../config';
 
 interface SnapshotFile {
   state: string;
@@ -30,16 +29,16 @@ export function hasSnapshot(): boolean {
   return findSnapshotFile() !== null;
 }
 
-export async function applySnapshot(): Promise<ContractAddresses> {
+export async function applySnapshot(anvilPort: number): Promise<ContractAddresses> {
   const p = findSnapshotFile();
   if (!p) throw new Error('No snapshot file found');
   const data: SnapshotFile = JSON.parse(fs.readFileSync(p, 'utf8'));
-  await anvilJsonRpc('anvil_loadState', [data.state]);
+  await anvilJsonRpc(anvilPort, 'anvil_loadState', [data.state]);
   return data.addresses;
 }
 
-export async function saveSnapshot(addresses: ContractAddresses): Promise<void> {
-  const state = (await anvilJsonRpc('anvil_dumpState', [])) as string;
+export async function saveSnapshot(addresses: ContractAddresses, anvilPort: number): Promise<void> {
+  const state = (await anvilJsonRpc(anvilPort, 'anvil_dumpState', [])) as string;
   const dir = resolveSnapshotDir();
   fs.mkdirSync(dir, { recursive: true });
   const data: SnapshotFile = { state, addresses };
@@ -61,11 +60,11 @@ const MAX_CLOCK_DRIFT_SECONDS = 60;
  *
  * On older anvil builds, which left the clock at wall time, this is a no-op.
  */
-export async function resyncChainClock(): Promise<{ driftBefore: number; driftAfter: number }> {
-  const driftBefore = await chainClockDrift();
+export async function resyncChainClock(anvilPort: number): Promise<{ driftBefore: number; driftAfter: number }> {
+  const driftBefore = await chainClockDrift(anvilPort);
 
   try {
-    await anvilJsonRpc('evm_setTime', [nowSeconds()]);
+    await anvilJsonRpc(anvilPort, 'evm_setTime', [nowSeconds()]);
   } catch {
     // Anvil builds without evm_setTime never re-anchored the clock on load either, so
     // their restored chain already runs at wall time. If it doesn't, the drift check
@@ -75,9 +74,9 @@ export async function resyncChainClock(): Promise<{ driftBefore: number; driftAf
   // Bee reads the latest block header, not the pending block env, so the new timestamp
   // only becomes visible once a block is mined. Interval mining would get there within
   // --block-time seconds; mining explicitly removes the race.
-  await anvilJsonRpc('anvil_mine', ['0x1']);
+  await anvilJsonRpc(anvilPort, 'anvil_mine', ['0x1']);
 
-  const driftAfter = await chainClockDrift();
+  const driftAfter = await chainClockDrift(anvilPort);
   if (driftAfter > MAX_CLOCK_DRIFT_SECONDS) {
     throw new Error(
       `Chain head is ${driftAfter}s behind wall clock after re-anchoring (limit ${MAX_CLOCK_DRIFT_SECONDS}s). ` +
@@ -89,8 +88,8 @@ export async function resyncChainClock(): Promise<{ driftBefore: number; driftAf
 }
 
 /** Seconds by which the chain head trails wall clock. */
-async function chainClockDrift(): Promise<number> {
-  const block = (await anvilJsonRpc('eth_getBlockByNumber', ['latest', false])) as {
+async function chainClockDrift(anvilPort: number): Promise<number> {
+  const block = (await anvilJsonRpc(anvilPort, 'eth_getBlockByNumber', ['latest', false])) as {
     timestamp: string;
   } | null;
   if (!block) throw new Error('Anvil returned no latest block');
@@ -101,12 +100,12 @@ function nowSeconds(): number {
   return Math.floor(Date.now() / 1000);
 }
 
-function anvilJsonRpc(method: string, params: unknown[]): Promise<unknown> {
+function anvilJsonRpc(anvilPort: number, method: string, params: unknown[]): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({ jsonrpc: '2.0', method, params, id: 1 });
     const options: http.RequestOptions = {
       hostname: 'localhost',
-      port: ANVIL_PORT,
+      port: anvilPort,
       path: '/',
       method: 'POST',
       headers: {
