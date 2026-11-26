@@ -13,6 +13,9 @@ on:
 
 jobs:
   build:
+    # Manual runs only from the default branch: a dispatch on another branch would
+    # build unreviewed workflow code and push :latest with the Docker Hub credentials.
+    if: github.event_name != 'workflow_dispatch' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     strategy:
       matrix:
         include:
@@ -22,6 +25,8 @@ jobs:
             arch: arm64
 
     runs-on: ${{ matrix.runner }}
+    # Docker Hub credentials are scoped to this environment (default branch / release tags only).
+    environment: release-ci
 
     steps:
       - name: Checkout
@@ -98,8 +103,13 @@ jobs:
         run: ./bin/bee-factory.js stop
 
   manifest:
+    # Manual runs only from the default branch: a dispatch on another branch would
+    # build unreviewed workflow code and push :latest with the Docker Hub credentials.
+    if: github.event_name != 'workflow_dispatch' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     needs: build
     runs-on: ubuntu-latest
+    # Docker Hub credentials are scoped to this environment (default branch / release tags only).
+    environment: release-ci
 
     steps:
       - name: Log in to Docker Hub
