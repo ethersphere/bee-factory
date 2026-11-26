@@ -27,6 +27,8 @@ import {
   waitForBeeReady,
   formPeerMesh,
   waitForRchashReady,
+  mineRedistributionRound,
+  waitForListenersPastBurst,
   getQueenBootnodeAddr,
   hubImageName,
   tryPullPrebuiltImages,
@@ -320,6 +322,7 @@ export async function start(options: StartOptions): Promise<void> {
   }
 
   // 12. Ensure reserve sampler is ready
+  let burstEnd: number;
   if (usePrebuilt) {
 
     // After state restore, Bee nodes need to complete a full redistribution round
@@ -329,11 +332,7 @@ export async function start(options: StartOptions): Promise<void> {
     {
       const spinner = ora('Advancing chain and waiting for reserve sampler...').start();
       try {
-        await fetch(`http://localhost:${ANVIL_PORT}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jsonrpc: '2.0', method: 'anvil_mine', params: ['0xa0'], id: 1 }), // 160 blocks > 1 round
-        });
+        burstEnd = await mineRedistributionRound();
         await waitForRchashReady(BEE_NODES[0].apiPort, 180_000);
         spinner.succeed(chalk.green('Reserve sampler ready.'));
       } catch (err) {
@@ -359,17 +358,25 @@ export async function start(options: StartOptions): Promise<void> {
     {
       const spinner = ora('Advancing chain past redistribution round for chunk eligibility...').start();
       try {
-        await fetch(`http://localhost:${ANVIL_PORT}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jsonrpc: '2.0', method: 'anvil_mine', params: ['0xa0'], id: 1 }), // 160 blocks > 1 round
-        });
+        burstEnd = await mineRedistributionRound();
         await new Promise((r) => setTimeout(r, 25_000)); // five Bee polling cycles
         spinner.succeed(chalk.green('Chunks eligible for reserve sampling.'));
       } catch (err) {
         spinner.fail(chalk.red('Failed to advance chain.'));
         throw err;
       }
+    }
+  }
+
+  // 12b. Make sure no node has synced past the real chain head before handing the stack over.
+  {
+    const spinner = ora('Waiting for nodes to catch up with the chain...').start();
+    try {
+      await waitForListenersPastBurst(BEE_NODES, burstEnd, 120_000);
+      spinner.succeed(chalk.green('All nodes in sync with the chain.'));
+    } catch (err) {
+      spinner.fail(chalk.red('Nodes did not settle on the chain head.'));
+      throw err;
     }
   }
 
