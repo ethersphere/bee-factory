@@ -4,7 +4,7 @@ Local Ethereum Swarm development stack — 5 Bee nodes + Anvil blockchain, fully
 
 ## Requirements
 
-- Node.js ≥ 18
+- Node.js ≥ 20.19 (or ≥ 22.12 on the 22 line)
 - Docker
 
 ## Install
