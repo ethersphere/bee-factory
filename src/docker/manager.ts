@@ -612,6 +612,55 @@ export async function waitForRchashReady(apiPort: number, timeoutMs: number): Pr
   );
 }
 
+async function anvilRpc(method: string, params: unknown[]): Promise<unknown> {
+  const res = await fetch(`http://localhost:${ANVIL_PORT}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', method, params, id: 1 }),
+  });
+  const body = (await res.json()) as { result?: unknown; error?: { message: string } };
+  if (body.error) throw new Error(`Anvil RPC ${method}: ${body.error.message}`);
+  return body.result;
+}
+
+export async function getAnvilBlockNumber(): Promise<number> {
+  return Number(await anvilRpc('eth_blockNumber', []));
+}
+
+export async function mineRedistributionRound(): Promise<number> {
+  await anvilRpc('anvil_mine', ['0xa0']); // 160 blocks > 1 round
+  return getAnvilBlockNumber();
+}
+
+// Bee's postage listener tails the head by 4 blocks and rounds down to multiples of 5.
+const LISTENER_LAG_BLOCKS = 8;
+
+// A same-timestamp burst makes Bee overshoot the head once; batches bought in skipped blocks are lost.
+export async function waitForListenersPastBurst(
+  nodes: { name: string; apiPort: number }[],
+  burstEnd: number,
+  timeoutMs: number
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  let lastState = 'no response';
+
+  while (Date.now() < deadline) {
+    try {
+      const head = await getAnvilBlockNumber();
+      const synced = await Promise.all(
+        nodes.map(async (node) => Number((await httpGetJson(`http://localhost:${node.apiPort}/chainstate`)).block))
+      );
+      if (synced.every((block) => block >= burstEnd - LISTENER_LAG_BLOCKS && block < head)) return;
+      lastState = `chain head ${head}, synced blocks: ` + nodes.map((node, i) => `${node.name}=${synced[i]}`).join(', ');
+    } catch (err) {
+      lastState = err instanceof Error ? err.message : String(err);
+    }
+    await sleep(1000);
+  }
+
+  throw new Error(`Timed out waiting for postage listeners to settle after block ${burstEnd} (${timeoutMs}ms). Last: ${lastState}`);
+}
+
 /** Returns true if the server replies with any HTTP status (even 4xx). */
 function httpGetAny(url: string): Promise<boolean> {
   return new Promise((resolve) => {
