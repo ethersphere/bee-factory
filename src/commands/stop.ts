@@ -1,9 +1,9 @@
 import chalk from 'chalk';
-import ora from 'ora';
+import { createSpinner } from '../ui/spinner';
 import { cleanupAll } from '../docker/manager';
 
 export async function stop(): Promise<void> {
-  const spinner = ora('Stopping bee-factory stack...').start();
+  const spinner = createSpinner('Stopping bee-factory stack...').start();
 
   try {
     await cleanupAll();

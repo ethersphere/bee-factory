@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import ora from 'ora';
+import { createSpinner } from '../ui/spinner';
 import { ethers } from 'ethers';
 
 import {
@@ -50,7 +50,7 @@ export async function start(options: StartOptions): Promise<void> {
 
   // 1. Clean slate
   {
-    const spinner = ora('Cleaning up existing containers...').start();
+    const spinner = createSpinner('Cleaning up existing containers...').start();
     try {
       await cleanupAll();
       spinner.succeed(chalk.green('Clean slate ready.'));
@@ -69,7 +69,7 @@ export async function start(options: StartOptions): Promise<void> {
 
   // 2. Pull Anvil image (skipped when using pre-built hub images)
   if (!usePrebuilt) {
-    const spinner = ora(`Pulling ${ANVIL_IMAGE}...`).start();
+    const spinner = createSpinner(`Pulling ${ANVIL_IMAGE}...`).start();
     try {
       await pullImageIfNeeded(ANVIL_IMAGE);
       spinner.succeed(chalk.green(`Image ready: ${ANVIL_IMAGE}`));
@@ -101,7 +101,7 @@ export async function start(options: StartOptions): Promise<void> {
 
   // 4. Create Docker network
   {
-    const spinner = ora('Creating Docker network...').start();
+    const spinner = createSpinner('Creating Docker network...').start();
     try {
       await createNetwork();
       spinner.succeed(chalk.green('Docker network ready.'));
@@ -113,7 +113,7 @@ export async function start(options: StartOptions): Promise<void> {
 
   // 5. Start Anvil
   {
-    const spinner = ora('Starting Anvil blockchain...').start();
+    const spinner = createSpinner('Starting Anvil blockchain...').start();
     console.log(chalk.dim(`\n  Block time: ${blockTime ?? 'default (1)'} seconds\n`));
     try {
       await startAnvil(blockTime, usePrebuilt ? hubImageName(ANVIL_CONTAINER, tag) : undefined);
@@ -131,7 +131,7 @@ export async function start(options: StartOptions): Promise<void> {
   let restoredState = false;
 
   if (usePrebuilt) {
-    const spinner = ora('Restoring Anvil state from pre-built image...').start();
+    const spinner = createSpinner('Restoring Anvil state from pre-built image...').start();
     try {
       addresses = await restoreAnvilState();
       restoredState = true;
@@ -144,7 +144,7 @@ export async function start(options: StartOptions): Promise<void> {
   const useSnapshot = !fresh && hasSnapshot();
 
   if (useSnapshot) {
-    const spinner = ora('Loading Anvil state from snapshot...').start();
+    const spinner = createSpinner('Loading Anvil state from snapshot...').start();
     try {
       addresses = await applySnapshot();
       restoredState = true;
@@ -160,7 +160,7 @@ export async function start(options: StartOptions): Promise<void> {
 
     // 5a. Deploy contracts
     {
-      const spinner = ora('Deploying smart contracts...').start();
+      const spinner = createSpinner('Deploying smart contracts...').start();
       try {
         const provider = new ethers.JsonRpcProvider(`http://localhost:${ANVIL_PORT}`);
         addresses = await deployContracts(provider);
@@ -181,7 +181,7 @@ export async function start(options: StartOptions): Promise<void> {
 
     // 5b. Fund Bee wallets
     {
-      const spinner = ora('Funding Bee node wallets...').start();
+      const spinner = createSpinner('Funding Bee node wallets...').start();
       try {
         const provider = new ethers.JsonRpcProvider(`http://localhost:${ANVIL_PORT}`);
         await fundNodes(provider, addresses.bzzToken);
@@ -194,7 +194,7 @@ export async function start(options: StartOptions): Promise<void> {
 
     // 5c. Save snapshot for future fast starts
     {
-      const spinner = ora('Saving Anvil state snapshot...').start();
+      const spinner = createSpinner('Saving Anvil state snapshot...').start();
       try {
         await saveSnapshot(addresses);
         spinner.succeed(chalk.green('Anvil state snapshot saved — future starts will load instantly.'));
@@ -211,7 +211,7 @@ export async function start(options: StartOptions): Promise<void> {
   // minute and blocks at startup, so pull the clock back to wall time before any node
   // starts. Freshly deployed chains are already current.
   if (restoredState) {
-    const spinner = ora('Re-anchoring chain clock to wall clock...').start();
+    const spinner = createSpinner('Re-anchoring chain clock to wall clock...').start();
     try {
       const { driftBefore, driftAfter } = await resyncChainClock();
       spinner.succeed(
@@ -229,7 +229,7 @@ export async function start(options: StartOptions): Promise<void> {
   // already contain swarm.key / libp2p_v2.key / pss.key for each node.
   const keystoreMap = new Map<number, string | undefined>();
   if (!usePrebuilt) {
-    const spinner = ora('Generating keystore files...').start();
+    const spinner = createSpinner('Generating keystore files...').start();
     try {
       const results = await generateAllKeystores(BEE_NODES);
       for (const { node, keystoreDir } of results) {
@@ -246,7 +246,7 @@ export async function start(options: StartOptions): Promise<void> {
   // Warmup requires peer events; the queen has no peers until workers connect.
   const queen = BEE_NODES[0];
   {
-    const spinner = ora(`Starting queen node (${queen.name})...`).start();
+    const spinner = createSpinner(`Starting queen node (${queen.name})...`).start();
     try {
       await startBeeNodeWithTag(queen, addresses, keystoreMap.get(0), tag, undefined, blockTime, usePrebuilt ? hubImageName(queen.name, tag) : undefined);
       spinner.text = `Waiting for queen API at port ${queen.apiPort}...`;
@@ -261,7 +261,7 @@ export async function start(options: StartOptions): Promise<void> {
   // 9. Get queen bootnode address
   let queenBootnode: string;
   {
-    const spinner = ora('Fetching queen bootnode address...').start();
+    const spinner = createSpinner('Fetching queen bootnode address...').start();
     try {
       queenBootnode = await getQueenBootnodeAddr(queen.apiPort);
       spinner.succeed(chalk.green(`Queen bootnode: ${queenBootnode}`));
@@ -274,7 +274,7 @@ export async function start(options: StartOptions): Promise<void> {
   // 10. Start all worker nodes in parallel and wait for each API to respond.
   const workers = BEE_NODES.slice(1);
   {
-    const spinner = ora('Starting worker nodes...').start();
+    const spinner = createSpinner('Starting worker nodes...').start();
     try {
       await Promise.all(workers.map(async (node) => {
         await startBeeNodeWithTag(node, addresses, keystoreMap.get(node.index), tag, queenBootnode, blockTime, usePrebuilt ? hubImageName(node.name, tag) : undefined);
@@ -293,7 +293,7 @@ export async function start(options: StartOptions): Promise<void> {
   // The stabilization detector needs at least one peer event to start its timer; that only
   // happens after workers connect, so we defer this check until all containers are up.
   {
-    const spinner = ora('Waiting for all nodes to finish warming up...').start();
+    const spinner = createSpinner('Waiting for all nodes to finish warming up...').start();
     try {
       await Promise.all(
         BEE_NODES.map((node) => waitForBeeReady(node.name, node.apiPort, 120_000))
@@ -311,7 +311,7 @@ export async function start(options: StartOptions): Promise<void> {
   // that race so traffic generation and reserve sampling see all peers
   // immediately.
   {
-    const spinner = ora('Forming peer mesh...').start();
+    const spinner = createSpinner('Forming peer mesh...').start();
     try {
       await formPeerMesh(BEE_NODES);
       spinner.succeed(chalk.green('Peer mesh formed.'));
@@ -330,7 +330,7 @@ export async function start(options: StartOptions): Promise<void> {
     // Mine well past one round and poll rchash directly — a fixed sleep is too
     // fragile because reserve indexing time varies with CI machine load.
     {
-      const spinner = ora('Advancing chain and waiting for reserve sampler...').start();
+      const spinner = createSpinner('Advancing chain and waiting for reserve sampler...').start();
       try {
         burstEnd = await mineRedistributionRound();
         await waitForRchashReady(BEE_NODES[0].apiPort, 180_000);
@@ -342,7 +342,7 @@ export async function start(options: StartOptions): Promise<void> {
     }
   } else {
     // Buy a batch and start uploading until Node 2 has at least 1 cheque
-    const spinner = ora(`Ensuring Node 2 has at least 1 claimable cheque...`).start();
+    const spinner = createSpinner(`Ensuring Node 2 has at least 1 claimable cheque...`).start();
     try {
       await generateTraffic();
       spinner.succeed(chalk.green(`Worker Node 2 has at least 1 cheque.`));
@@ -356,7 +356,7 @@ export async function start(options: StartOptions): Promise<void> {
     // one full round (152 blocks), then wait for Bee nodes to process the new blocks
     // (Bee polls the chain every 5 seconds).
     {
-      const spinner = ora('Advancing chain past redistribution round for chunk eligibility...').start();
+      const spinner = createSpinner('Advancing chain past redistribution round for chunk eligibility...').start();
       try {
         burstEnd = await mineRedistributionRound();
         await new Promise((r) => setTimeout(r, 25_000)); // five Bee polling cycles
