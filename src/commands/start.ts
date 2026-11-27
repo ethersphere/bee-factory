@@ -370,7 +370,7 @@ export async function start(options: StartOptions): Promise<void> {
 
   // 12b. Make sure no node has synced past the real chain head before handing the stack over.
   {
-    const spinner = ora('Waiting for nodes to catch up with the chain...').start();
+    const spinner = createSpinner('Waiting for nodes to catch up with the chain...').start();
     try {
       await waitForListenersPastBurst(BEE_NODES, burstEnd, 120_000);
       spinner.succeed(chalk.green('All nodes in sync with the chain.'));
