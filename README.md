@@ -19,6 +19,7 @@ npm install -g @ethersphere/bee-factory
 bee-factory start               # Start the stack (uses bundled snapshot for fast boot)
 bee-factory start --fresh       # Redeploy contracts from scratch, save new snapshot
 bee-factory start --tag v2.7.1  # Build Bee from a specific git ref (default: master)
+bee-factory start --port-offset 10000  # Shift all host ports (1633 → 11633, 8545 → 18545)
 
 bee-factory stop                # Stop and remove all containers
 ```
@@ -34,6 +35,10 @@ bee-factory stop                # Stop and remove all containers
 | Worker 4 | http://localhost:1641 | http://localhost:1642 |
 
 **Anvil RPC:** `http://localhost:8545` (chain ID 1337)
+
+### Running next to another Bee node
+
+If any of these ports are taken (e.g. by a Bee node on 1633), `start` stops before creating any containers and lists the busy ports. Use `--port-offset <n>` or `BEE_FACTORY_PORT_OFFSET=<n>` to add `n` to every host port above. Ports inside the containers stay the same.
 
 ## Deployed contracts
 

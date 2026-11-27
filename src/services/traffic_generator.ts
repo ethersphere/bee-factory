@@ -1,16 +1,19 @@
 import { BatchId, Bee, BeeRequestOptions, Duration, Size } from '@ethersphere/bee-js';
-import { BEE_NODES } from './../config';
+import { BEE_NODES, hostPort } from './../config';
 
 const REQUEST_OPTIONS: BeeRequestOptions = { timeout: 30_000 };
 const TRAFFIC_TIMEOUT_MS = 10 * 60_000; // 10 minutes
 const PEER_WAIT_TIMEOUT_MS = 2 * 60_000; // 2 minutes
 
-export async function generateTraffic(): Promise<void> {
-  const work = async () => {
-    const uploaderBee = new Bee(`http://localhost:${BEE_NODES[1].apiPort}`);
-    const chequeMonitorBee = new Bee(`http://localhost:${BEE_NODES[2].apiPort}`);
+export async function generateTraffic(portOffset: number): Promise<void> {
+  const uploaderPort = hostPort(BEE_NODES[1].apiPort, portOffset);
+  const chequeMonitorPort = hostPort(BEE_NODES[2].apiPort, portOffset);
 
-    await waitForSpecificPeer(BEE_NODES[1].apiPort, BEE_NODES[2].apiPort, PEER_WAIT_TIMEOUT_MS);
+  const work = async () => {
+    const uploaderBee = new Bee(`http://localhost:${uploaderPort}`);
+    const chequeMonitorBee = new Bee(`http://localhost:${chequeMonitorPort}`);
+
+    await waitForSpecificPeer(uploaderPort, chequeMonitorPort, PEER_WAIT_TIMEOUT_MS);
 
     const batchId = await uploaderBee.buyStorage(Size.fromGigabytes(1), Duration.fromWeeks(2), undefined, REQUEST_OPTIONS);
 
